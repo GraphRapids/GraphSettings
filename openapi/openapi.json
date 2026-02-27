@@ -220,6 +220,46 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": ["icon-sets"],
+        "summary": "Delete Iconset V1",
+        "operationId": "delete_iconset_v1_v1_icon_sets__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/icon-sets/{id}/bundle": {
@@ -261,6 +301,75 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/IconsetBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/icon-sets/{id}/entries": {
+      "get": {
+        "tags": ["icon-sets"],
+        "summary": "Get Iconset Entries V1",
+        "operationId": "get_iconset_entries_v1_v1_icon_sets__id__entries_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "icon_set_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Icon Set Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetEntriesResponseV1" }
               }
             }
           },
@@ -727,6 +836,46 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": ["layout-sets"],
+        "summary": "Delete Layout Set V1",
+        "operationId": "delete_layout_set_v1_v1_layout_sets__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/layout-sets/{id}/bundle": {
@@ -768,6 +917,75 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/LayoutSetBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/layout-sets/{id}/entries": {
+      "get": {
+        "tags": ["layout-sets"],
+        "summary": "Get Layout Set Entries V1",
+        "operationId": "get_layout_set_entries_v1_v1_layout_sets__id__entries_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "layout_set_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Layout Set Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LayoutSetEntriesResponseV1" }
               }
             }
           },
@@ -1169,6 +1387,46 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": ["link-sets"],
+        "summary": "Delete Link Set V1",
+        "operationId": "delete_link_set_v1_v1_link_sets__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/link-sets/{id}/bundle": {
@@ -1210,6 +1468,75 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/LinkSetBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/link-sets/{id}/entries": {
+      "get": {
+        "tags": ["link-sets"],
+        "summary": "Get Link Set Entries V1",
+        "operationId": "get_link_set_entries_v1_v1_link_sets__id__entries_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "link_set_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Link Set Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LinkSetEntriesResponseV1" }
               }
             }
           },
@@ -1586,6 +1913,46 @@
             },
             "description": "Bad Request"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["graph-types"],
+        "summary": "Delete Graph Type V1",
+        "operationId": "delete_graph_type_v1_v1_graph_types__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
           "404": {
             "content": {
               "application/json": {
@@ -2075,6 +2442,46 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": ["themes"],
+        "summary": "Delete Theme V1",
+        "operationId": "delete_theme_v1_v1_themes__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/themes/{id}/bundle": {
@@ -2116,6 +2523,75 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ThemeBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/themes/{id}/variables": {
+      "get": {
+        "tags": ["themes"],
+        "summary": "Get Theme Variables V1",
+        "operationId": "get_theme_variables_v1_v1_themes__id__variables_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "theme_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Theme Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThemeVariablesResponseV1" }
               }
             }
           },
@@ -2917,6 +3393,38 @@
         "required": ["name", "entries", "iconSetId"],
         "title": "IconsetCreateRequestV1"
       },
+      "IconsetEntriesResponseV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "iconSetId": { "type": "string", "title": "Iconsetid" },
+          "iconSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Iconsetversion"
+          },
+          "stage": { "type": "string", "enum": ["draft", "published"], "title": "Stage" },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          },
+          "entries": {
+            "additionalProperties": { "type": "string" },
+            "type": "object",
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["iconSetId", "iconSetVersion", "stage", "checksum", "entries"],
+        "title": "IconsetEntriesResponseV1"
+      },
       "IconsetEntryUpsertRequestV1": {
         "properties": { "icon": { "type": "string", "title": "Icon" } },
         "additionalProperties": false,
@@ -3158,6 +3666,38 @@
         "required": ["name", "elkSettings", "layoutSetId"],
         "title": "LayoutSetCreateRequestV1"
       },
+      "LayoutSetEntriesResponseV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "layoutSetId": { "type": "string", "title": "Layoutsetid" },
+          "layoutSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Layoutsetversion"
+          },
+          "stage": { "type": "string", "enum": ["draft", "published"], "title": "Stage" },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          },
+          "entries": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["layoutSetId", "layoutSetVersion", "stage", "checksum", "entries"],
+        "title": "LayoutSetEntriesResponseV1"
+      },
       "LayoutSetEntryUpsertRequestV1": {
         "properties": { "value": { "title": "Value" } },
         "additionalProperties": false,
@@ -3319,6 +3859,40 @@
         "type": "object",
         "required": ["name", "entries", "linkSetId"],
         "title": "LinkSetCreateRequestV1"
+      },
+      "LinkSetEntriesResponseV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "linkSetId": { "type": "string", "title": "Linksetid" },
+          "linkSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Linksetversion"
+          },
+          "stage": { "type": "string", "enum": ["draft", "published"], "title": "Stage" },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          },
+          "entries": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkTypeDefinitionV1"
+            },
+            "type": "object",
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["linkSetId", "linkSetVersion", "stage", "checksum", "entries"],
+        "title": "LinkSetEntriesResponseV1"
       },
       "LinkSetEntryUpsertRequestV1": {
         "properties": {
@@ -3758,6 +4332,34 @@
         "type": "object",
         "required": ["valueType", "lightValue", "darkValue"],
         "title": "ThemeVariableV1"
+      },
+      "ThemeVariablesResponseV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "themeId": { "type": "string", "title": "Themeid" },
+          "themeVersion": { "type": "integer", "minimum": 1.0, "title": "Themeversion" },
+          "stage": { "type": "string", "enum": ["draft", "published"], "title": "Stage" },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          },
+          "variables": {
+            "additionalProperties": { "$ref": "#/components/schemas/ThemeVariableV1" },
+            "type": "object",
+            "title": "Variables"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["themeId", "themeVersion", "stage", "checksum", "variables"],
+        "title": "ThemeVariablesResponseV1"
       },
       "ValidationError": {
         "properties": {

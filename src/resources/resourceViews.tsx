@@ -3,6 +3,7 @@ import {
   Create,
   Datagrid,
   DateField,
+  DeleteWithConfirmButton,
   Edit,
   EditButton,
   List,
@@ -27,6 +28,13 @@ import {
 import { JsonField } from "../components/JsonField";
 import { JsonInput } from "../components/JsonInput";
 import { validateJson } from "../components/jsonValidation";
+import {
+  GraphTypeOperations,
+  IconSetOperations,
+  LayoutSetOperations,
+  LinkSetOperations,
+  ThemeOperations,
+} from "./ResourceOperations";
 
 const qFilter = [<SearchInput source="q" alwaysOn key="q" />];
 
@@ -59,6 +67,7 @@ export const iconSetViews: Pick<
         <TextField source="checksum" />
         <ShowButton />
         <EditButton />
+        <DeleteWithConfirmButton />
       </Datagrid>
     </List>
   ),
@@ -71,6 +80,7 @@ export const iconSetViews: Pick<
         <DateField source="updatedAt" showTime />
         <JsonField label="Entries" source="entries" />
         <JsonField label="Published Versions" source="publishedVersions" />
+        <IconSetOperations />
       </SimpleShowLayout>
     </Show>
   ),
@@ -111,6 +121,7 @@ export const layoutSetViews: Pick<
         <TextField source="checksum" />
         <ShowButton />
         <EditButton />
+        <DeleteWithConfirmButton />
       </Datagrid>
     </List>
   ),
@@ -123,6 +134,7 @@ export const layoutSetViews: Pick<
         <DateField source="updatedAt" showTime />
         <JsonField label="ELK Settings" source="elkSettings" />
         <JsonField label="Published Versions" source="publishedVersions" />
+        <LayoutSetOperations />
       </SimpleShowLayout>
     </Show>
   ),
@@ -163,6 +175,7 @@ export const linkSetViews: Pick<
         <TextField source="checksum" />
         <ShowButton />
         <EditButton />
+        <DeleteWithConfirmButton />
       </Datagrid>
     </List>
   ),
@@ -175,6 +188,7 @@ export const linkSetViews: Pick<
         <DateField source="updatedAt" showTime />
         <JsonField label="Entries" source="entries" />
         <JsonField label="Published Versions" source="publishedVersions" />
+        <LinkSetOperations />
       </SimpleShowLayout>
     </Show>
   ),
@@ -221,6 +235,7 @@ export const graphTypeViews: Pick<
         <TextField source="runtimeChecksum" />
         <ShowButton />
         <EditButton />
+        <DeleteWithConfirmButton />
       </Datagrid>
     </List>
   ),
@@ -236,6 +251,7 @@ export const graphTypeViews: Pick<
         <JsonField label="Icon Set Refs" source="iconSetRefs" />
         <JsonField label="Link Set Ref" source="linkSetRef" />
         <JsonField label="Published Versions" source="publishedVersions" />
+        <GraphTypeOperations />
       </SimpleShowLayout>
     </Show>
   ),
@@ -390,6 +406,7 @@ export const themeViews: Pick<
         <TextField source="checksum" />
         <ShowButton />
         <EditButton />
+        <DeleteWithConfirmButton />
       </Datagrid>
     </List>
   ),
@@ -400,9 +417,10 @@ export const themeViews: Pick<
         <TextField source="name" />
         <NumberField source="themeVersion" label="Draft Version" />
         <DateField source="updatedAt" showTime />
-        <JsonField label="CSS Body" source="cssBody" />
+        <TextField source="cssBody" />
         <JsonField label="Variables" source="variables" />
         <JsonField label="Published Versions" source="publishedVersions" />
+        <ThemeOperations />
       </SimpleShowLayout>
     </Show>
   ),

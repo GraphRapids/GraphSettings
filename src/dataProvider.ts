@@ -1,5 +1,7 @@
 import {
   type CreateParams,
+  type DeleteManyParams,
+  type DeleteParams,
   HttpError,
   type DataProvider,
   type GetListParams,
@@ -555,30 +557,26 @@ export function createGraphSettingsDataProvider(adapter: ScopedApiAdapter): Data
       };
     },
 
-    async delete() {
-      throw new HttpError(
-        "Delete is not supported for these resources by the current API.",
-        405,
-        {
-          errors: {
-            "root.serverError":
-              "Delete is not supported for these resources by the current API.",
-          },
+    async delete(resource: string, params: DeleteParams) {
+      const scopedResource = ensureScopedResource(resource);
+      await adapter.delete(scopedResource, String(params.id));
+
+      return {
+        data: {
+          id: params.id,
         },
-      );
+      };
     },
 
-    async deleteMany() {
-      throw new HttpError(
-        "Delete is not supported for these resources by the current API.",
-        405,
-        {
-          errors: {
-            "root.serverError":
-              "Delete is not supported for these resources by the current API.",
-          },
-        },
+    async deleteMany(resource: string, params: DeleteManyParams) {
+      const scopedResource = ensureScopedResource(resource);
+      await Promise.all(
+        params.ids.map((id: Identifier) => adapter.delete(scopedResource, String(id))),
       );
+
+      return {
+        data: params.ids,
+      };
     },
   };
 

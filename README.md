@@ -81,5 +81,11 @@ npm run build
 
 ## Notes
 
-- Delete operations are intentionally disabled because the OpenAPI spec does not define delete endpoints for the five scoped resources.
+- Full CRUD is enabled for `icon-sets`, `layout-sets`, `link-sets`, `graph-types`, and `themes` (including delete).
+- Show pages include operation panels for the remaining in-scope APIs such as:
+  - bundle retrieval
+  - publish
+  - entries/variables read+upsert+delete
+  - graph-type runtime
+  - icon-set resolve
 - API validation and error responses are normalized into React Admin-friendly errors, including field-level messages when provided by the backend.

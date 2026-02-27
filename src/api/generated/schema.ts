@@ -68,7 +68,8 @@ export interface paths {
     /** Update Iconset V1 */
     put: operations["update_iconset_v1_v1_icon_sets__id__put"];
     post?: never;
-    delete?: never;
+    /** Delete Iconset V1 */
+    delete: operations["delete_iconset_v1_v1_icon_sets__id__delete"];
     options?: never;
     head?: never;
     patch?: never;
@@ -83,6 +84,23 @@ export interface paths {
     };
     /** Get Iconset Bundle V1 */
     get: operations["get_iconset_bundle_v1_v1_icon_sets__id__bundle_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/icon-sets/{id}/entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Iconset Entries V1 */
+    get: operations["get_iconset_entries_v1_v1_icon_sets__id__entries_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -173,7 +191,8 @@ export interface paths {
     /** Update Layout Set V1 */
     put: operations["update_layout_set_v1_v1_layout_sets__id__put"];
     post?: never;
-    delete?: never;
+    /** Delete Layout Set V1 */
+    delete: operations["delete_layout_set_v1_v1_layout_sets__id__delete"];
     options?: never;
     head?: never;
     patch?: never;
@@ -188,6 +207,23 @@ export interface paths {
     };
     /** Get Layout Set Bundle V1 */
     get: operations["get_layout_set_bundle_v1_v1_layout_sets__id__bundle_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/layout-sets/{id}/entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Layout Set Entries V1 */
+    get: operations["get_layout_set_entries_v1_v1_layout_sets__id__entries_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -261,7 +297,8 @@ export interface paths {
     /** Update Link Set V1 */
     put: operations["update_link_set_v1_v1_link_sets__id__put"];
     post?: never;
-    delete?: never;
+    /** Delete Link Set V1 */
+    delete: operations["delete_link_set_v1_v1_link_sets__id__delete"];
     options?: never;
     head?: never;
     patch?: never;
@@ -276,6 +313,23 @@ export interface paths {
     };
     /** Get Link Set Bundle V1 */
     get: operations["get_link_set_bundle_v1_v1_link_sets__id__bundle_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/link-sets/{id}/entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Link Set Entries V1 */
+    get: operations["get_link_set_entries_v1_v1_link_sets__id__entries_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -349,7 +403,8 @@ export interface paths {
     /** Update Graph Type V1 */
     put: operations["update_graph_type_v1_v1_graph_types__id__put"];
     post?: never;
-    delete?: never;
+    /** Delete Graph Type V1 */
+    delete: operations["delete_graph_type_v1_v1_graph_types__id__delete"];
     options?: never;
     head?: never;
     patch?: never;
@@ -453,7 +508,8 @@ export interface paths {
     /** Update Theme V1 */
     put: operations["update_theme_v1_v1_themes__id__put"];
     post?: never;
-    delete?: never;
+    /** Delete Theme V1 */
+    delete: operations["delete_theme_v1_v1_themes__id__delete"];
     options?: never;
     head?: never;
     patch?: never;
@@ -468,6 +524,23 @@ export interface paths {
     };
     /** Get Theme Bundle V1 */
     get: operations["get_theme_bundle_v1_v1_themes__id__bundle_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/themes/{id}/variables": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Theme Variables V1 */
+    get: operations["get_theme_variables_v1_v1_themes__id__variables_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -806,6 +879,30 @@ export interface components {
       /** Iconsetid */
       iconSetId: string;
     };
+    /** IconsetEntriesResponseV1 */
+    IconsetEntriesResponseV1: {
+      /**
+       * Schemaversion
+       * @default v1
+       * @constant
+       */
+      schemaVersion: "v1";
+      /** Iconsetid */
+      iconSetId: string;
+      /** Iconsetversion */
+      iconSetVersion: number;
+      /**
+       * Stage
+       * @enum {string}
+       */
+      stage: "draft" | "published";
+      /** Checksum */
+      checksum: string;
+      /** Entries */
+      entries: {
+        [key: string]: string;
+      };
+    };
     /** IconsetEntryUpsertRequestV1 */
     IconsetEntryUpsertRequestV1: {
       /** Icon */
@@ -959,6 +1056,30 @@ export interface components {
       /** Layoutsetid */
       layoutSetId: string;
     };
+    /** LayoutSetEntriesResponseV1 */
+    LayoutSetEntriesResponseV1: {
+      /**
+       * Schemaversion
+       * @default v1
+       * @constant
+       */
+      schemaVersion: "v1";
+      /** Layoutsetid */
+      layoutSetId: string;
+      /** Layoutsetversion */
+      layoutSetVersion: number;
+      /**
+       * Stage
+       * @enum {string}
+       */
+      stage: "draft" | "published";
+      /** Checksum */
+      checksum: string;
+      /** Entries */
+      entries: {
+        [key: string]: unknown;
+      };
+    };
     /** LayoutSetEntryUpsertRequestV1 */
     LayoutSetEntryUpsertRequestV1: {
       /** Value */
@@ -1061,6 +1182,30 @@ export interface components {
       };
       /** Linksetid */
       linkSetId: string;
+    };
+    /** LinkSetEntriesResponseV1 */
+    LinkSetEntriesResponseV1: {
+      /**
+       * Schemaversion
+       * @default v1
+       * @constant
+       */
+      schemaVersion: "v1";
+      /** Linksetid */
+      linkSetId: string;
+      /** Linksetversion */
+      linkSetVersion: number;
+      /**
+       * Stage
+       * @enum {string}
+       */
+      stage: "draft" | "published";
+      /** Checksum */
+      checksum: string;
+      /** Entries */
+      entries: {
+        [key: string]: components["schemas"]["LinkTypeDefinitionV1"];
+      };
     };
     /** LinkSetEntryUpsertRequestV1 */
     LinkSetEntryUpsertRequestV1: {
@@ -1318,6 +1463,30 @@ export interface components {
       /** Darkvalue */
       darkValue: string;
     };
+    /** ThemeVariablesResponseV1 */
+    ThemeVariablesResponseV1: {
+      /**
+       * Schemaversion
+       * @default v1
+       * @constant
+       */
+      schemaVersion: "v1";
+      /** Themeid */
+      themeId: string;
+      /** Themeversion */
+      themeVersion: number;
+      /**
+       * Stage
+       * @enum {string}
+       */
+      stage: "draft" | "published";
+      /** Checksum */
+      checksum: string;
+      /** Variables */
+      variables: {
+        [key: string]: components["schemas"]["ThemeVariableV1"];
+      };
+    };
     /** ValidationError */
     ValidationError: {
       /** Location */
@@ -1573,6 +1742,53 @@ export interface operations {
       };
     };
   };
+  delete_iconset_v1_v1_icon_sets__id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
   get_iconset_bundle_v1_v1_icon_sets__id__bundle_get: {
     parameters: {
       query?: {
@@ -1594,6 +1810,58 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["IconsetBundleV1"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  get_iconset_entries_v1_v1_icon_sets__id__entries_get: {
+    parameters: {
+      query?: {
+        stage?: "draft" | "published";
+        icon_set_version?: number | null;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IconsetEntriesResponseV1"];
         };
       };
       /** @description Not Found */
@@ -2065,6 +2333,53 @@ export interface operations {
       };
     };
   };
+  delete_layout_set_v1_v1_layout_sets__id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
   get_layout_set_bundle_v1_v1_layout_sets__id__bundle_get: {
     parameters: {
       query?: {
@@ -2086,6 +2401,58 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["LayoutSetBundleV1"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  get_layout_set_entries_v1_v1_layout_sets__id__entries_get: {
+    parameters: {
+      query?: {
+        stage?: "draft" | "published";
+        layout_set_version?: number | null;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LayoutSetEntriesResponseV1"];
         };
       };
       /** @description Not Found */
@@ -2488,6 +2855,53 @@ export interface operations {
       };
     };
   };
+  delete_link_set_v1_v1_link_sets__id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
   get_link_set_bundle_v1_v1_link_sets__id__bundle_get: {
     parameters: {
       query?: {
@@ -2509,6 +2923,58 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["LinkSetBundleV1"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  get_link_set_entries_v1_v1_link_sets__id__entries_get: {
+    parameters: {
+      query?: {
+        stage?: "draft" | "published";
+        link_set_version?: number | null;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkSetEntriesResponseV1"];
         };
       };
       /** @description Not Found */
@@ -2881,6 +3347,53 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["ErrorResponse"];
         };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  delete_graph_type_v1_v1_graph_types__id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Not Found */
       404: {
@@ -3333,6 +3846,53 @@ export interface operations {
       };
     };
   };
+  delete_theme_v1_v1_themes__id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
   get_theme_bundle_v1_v1_themes__id__bundle_get: {
     parameters: {
       query?: {
@@ -3354,6 +3914,58 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ThemeBundleV1"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  get_theme_variables_v1_v1_themes__id__variables_get: {
+    parameters: {
+      query?: {
+        stage?: "draft" | "published";
+        theme_version?: number | null;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ThemeVariablesResponseV1"];
         };
       };
       /** @description Not Found */
