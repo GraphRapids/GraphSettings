@@ -1,0 +1,3780 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GraphAPI",
+    "description": "GraphRapids runtime API. Includes graph type + icon set + layout set + link set + render theme management (v1) and graph render orchestration over GraphLoom + GraphRender.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "summary": "Healthz",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": { "type": "string" },
+                  "type": "object",
+                  "title": "Response Healthz Healthz Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schemas/minimal-input.schema.json": {
+      "get": {
+        "summary": "Minimal Input Schema",
+        "operationId": "minimal_input_schema_schemas_minimal_input_schema_json_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/v1/icon-sets": {
+      "get": {
+        "tags": ["icon-sets"],
+        "summary": "List Icon Sets V1",
+        "operationId": "list_icon_sets_v1_v1_icon_sets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetListResponseV1" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["icon-sets"],
+        "summary": "Create Iconset V1",
+        "operationId": "create_iconset_v1_v1_icon_sets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/IconsetCreateRequestV1" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/icon-sets/{id}": {
+      "get": {
+        "tags": ["icon-sets"],
+        "summary": "Get Iconset V1",
+        "operationId": "get_iconset_v1_v1_icon_sets__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetRecordV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["icon-sets"],
+        "summary": "Update Iconset V1",
+        "operationId": "update_iconset_v1_v1_icon_sets__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/IconsetUpdateRequestV1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/icon-sets/{id}/bundle": {
+      "get": {
+        "tags": ["icon-sets"],
+        "summary": "Get Iconset Bundle V1",
+        "operationId": "get_iconset_bundle_v1_v1_icon_sets__id__bundle_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "icon_set_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Icon Set Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/icon-sets/{id}/entries/{key}": {
+      "put": {
+        "tags": ["icon-sets"],
+        "summary": "Upsert Iconset Entry V1",
+        "operationId": "upsert_iconset_entry_v1_v1_icon_sets__id__entries__key__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Key" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/IconsetEntryUpsertRequestV1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["icon-sets"],
+        "summary": "Delete Iconset Entry V1",
+        "operationId": "delete_iconset_entry_v1_v1_icon_sets__id__entries__key__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Key" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/icon-sets/{id}/publish": {
+      "post": {
+        "tags": ["icon-sets"],
+        "summary": "Publish Iconset V1",
+        "operationId": "publish_iconset_v1_v1_icon_sets__id__publish_post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/icon-sets/resolve": {
+      "post": {
+        "tags": ["icon-sets"],
+        "summary": "Resolve Icon Sets V1",
+        "operationId": "resolve_icon_sets_v1_v1_icon_sets_resolve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/IconsetResolveRequestV1" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IconsetResolutionResultV1" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/layout-sets": {
+      "get": {
+        "tags": ["layout-sets"],
+        "summary": "List Layout Sets V1",
+        "operationId": "list_layout_sets_v1_v1_layout_sets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LayoutSetListResponseV1" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["layout-sets"],
+        "summary": "Create Layout Set V1",
+        "operationId": "create_layout_set_v1_v1_layout_sets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LayoutSetCreateRequestV1" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LayoutSetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/layout-sets/{id}": {
+      "get": {
+        "tags": ["layout-sets"],
+        "summary": "Get Layout Set V1",
+        "operationId": "get_layout_set_v1_v1_layout_sets__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LayoutSetRecordV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["layout-sets"],
+        "summary": "Update Layout Set V1",
+        "operationId": "update_layout_set_v1_v1_layout_sets__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LayoutSetUpdateRequestV1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LayoutSetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/layout-sets/{id}/bundle": {
+      "get": {
+        "tags": ["layout-sets"],
+        "summary": "Get Layout Set Bundle V1",
+        "operationId": "get_layout_set_bundle_v1_v1_layout_sets__id__bundle_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "layout_set_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Layout Set Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LayoutSetBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/layout-sets/{id}/entries/{key}": {
+      "put": {
+        "tags": ["layout-sets"],
+        "summary": "Upsert Layout Set Entry V1",
+        "operationId": "upsert_layout_set_entry_v1_v1_layout_sets__id__entries__key__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Key" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LayoutSetEntryUpsertRequestV1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LayoutSetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["layout-sets"],
+        "summary": "Delete Layout Set Entry V1",
+        "operationId": "delete_layout_set_entry_v1_v1_layout_sets__id__entries__key__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Key" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LayoutSetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/layout-sets/{id}/publish": {
+      "post": {
+        "tags": ["layout-sets"],
+        "summary": "Publish Layout Set V1",
+        "operationId": "publish_layout_set_v1_v1_layout_sets__id__publish_post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LayoutSetBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/link-sets": {
+      "get": {
+        "tags": ["link-sets"],
+        "summary": "List Link Sets V1",
+        "operationId": "list_link_sets_v1_v1_link_sets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LinkSetListResponseV1" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["link-sets"],
+        "summary": "Create Link Set V1",
+        "operationId": "create_link_set_v1_v1_link_sets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LinkSetCreateRequestV1" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LinkSetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/link-sets/{id}": {
+      "get": {
+        "tags": ["link-sets"],
+        "summary": "Get Link Set V1",
+        "operationId": "get_link_set_v1_v1_link_sets__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LinkSetRecordV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["link-sets"],
+        "summary": "Update Link Set V1",
+        "operationId": "update_link_set_v1_v1_link_sets__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LinkSetUpdateRequestV1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LinkSetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/link-sets/{id}/bundle": {
+      "get": {
+        "tags": ["link-sets"],
+        "summary": "Get Link Set Bundle V1",
+        "operationId": "get_link_set_bundle_v1_v1_link_sets__id__bundle_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "link_set_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Link Set Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LinkSetBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/link-sets/{id}/entries/{key}": {
+      "put": {
+        "tags": ["link-sets"],
+        "summary": "Upsert Link Entry V1",
+        "operationId": "upsert_link_entry_v1_v1_link_sets__id__entries__key__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Key" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LinkSetEntryUpsertRequestV1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LinkSetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["link-sets"],
+        "summary": "Delete Link Entry V1",
+        "operationId": "delete_link_entry_v1_v1_link_sets__id__entries__key__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Key" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LinkSetRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/link-sets/{id}/publish": {
+      "post": {
+        "tags": ["link-sets"],
+        "summary": "Publish Link Set V1",
+        "operationId": "publish_link_set_v1_v1_link_sets__id__publish_post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LinkSetBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/graph-types": {
+      "get": {
+        "tags": ["graph-types"],
+        "summary": "List Graph Types V1",
+        "operationId": "list_graph_types_v1_v1_graph_types_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GraphTypeListResponseV1" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["graph-types"],
+        "summary": "Create Graph Type V1",
+        "operationId": "create_graph_type_v1_v1_graph_types_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GraphTypeCreateRequestV1" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GraphTypeRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/graph-types/{id}": {
+      "get": {
+        "tags": ["graph-types"],
+        "summary": "Get Graph Type V1",
+        "operationId": "get_graph_type_v1_v1_graph_types__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GraphTypeRecordV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["graph-types"],
+        "summary": "Update Graph Type V1",
+        "operationId": "update_graph_type_v1_v1_graph_types__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GraphTypeUpdateRequestV1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GraphTypeRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/graph-types/{id}/bundle": {
+      "get": {
+        "tags": ["graph-types"],
+        "summary": "Get Graph Type Bundle V1",
+        "operationId": "get_graph_type_bundle_v1_v1_graph_types__id__bundle_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "graph_type_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Graph Type Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GraphTypeBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/graph-types/{id}/publish": {
+      "post": {
+        "tags": ["graph-types"],
+        "summary": "Publish Graph Type V1",
+        "operationId": "publish_graph_type_v1_v1_graph_types__id__publish_post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GraphTypeBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/graph-types/{id}/runtime": {
+      "get": {
+        "tags": ["graph-types"],
+        "summary": "Get Graph Type Runtime V1",
+        "operationId": "get_graph_type_runtime_v1_v1_graph_types__id__runtime_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "graph_type_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Graph Type Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GraphTypeRuntimeResponseV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/autocomplete/catalog": {
+      "get": {
+        "tags": ["graph-types"],
+        "summary": "Get Autocomplete Catalog V1",
+        "operationId": "get_autocomplete_catalog_v1_v1_autocomplete_catalog_get",
+        "parameters": [
+          {
+            "name": "graph_type_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "title": "Graph Type Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "graph_type_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Graph Type Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AutocompleteCatalogResponseV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/themes": {
+      "get": {
+        "tags": ["themes"],
+        "summary": "List Themes V1",
+        "operationId": "list_themes_v1_v1_themes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThemeListResponseV1" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["themes"],
+        "summary": "Create Theme V1",
+        "operationId": "create_theme_v1_v1_themes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ThemeCreateRequestV1" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThemeRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/themes/{id}": {
+      "get": {
+        "tags": ["themes"],
+        "summary": "Get Theme V1",
+        "operationId": "get_theme_v1_v1_themes__id__get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThemeRecordV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["themes"],
+        "summary": "Update Theme V1",
+        "operationId": "update_theme_v1_v1_themes__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ThemeUpdateRequestV1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThemeRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/themes/{id}/bundle": {
+      "get": {
+        "tags": ["themes"],
+        "summary": "Get Theme Bundle V1",
+        "operationId": "get_theme_bundle_v1_v1_themes__id__bundle_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "theme_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Theme Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThemeBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/themes/{id}/variables/{key}": {
+      "put": {
+        "tags": ["themes"],
+        "summary": "Upsert Theme Variable V1",
+        "operationId": "upsert_theme_variable_v1_v1_themes__id__variables__key__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Key" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ThemeVariableUpsertRequestV1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThemeRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["themes"],
+        "summary": "Delete Theme Variable V1",
+        "operationId": "delete_theme_variable_v1_v1_themes__id__variables__key__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Key" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThemeRecordV1" }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/themes/{id}/publish": {
+      "post": {
+        "tags": ["themes"],
+        "summary": "Publish Theme V1",
+        "operationId": "publish_theme_v1_v1_themes__id__publish_post",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThemeBundleV1" }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/validate": {
+      "post": {
+        "summary": "Validate Graph",
+        "operationId": "validate_graph_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MinimalGraphIn" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Validate Graph Validate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/render/svg": {
+      "post": {
+        "summary": "Render Svg",
+        "operationId": "render_svg_render_svg_post",
+        "parameters": [
+          {
+            "name": "graph_type_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Graph Type Id"
+            }
+          },
+          {
+            "name": "graph_type_stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Graph Type Stage"
+            }
+          },
+          {
+            "name": "graph_type_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Graph Type Version"
+            }
+          },
+          {
+            "name": "theme_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Theme Id"
+            }
+          },
+          {
+            "name": "theme_stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": ["draft", "published"],
+              "type": "string",
+              "default": "published",
+              "title": "Theme Stage"
+            }
+          },
+          {
+            "name": "theme_version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }],
+              "title": "Theme Version"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MinimalGraphIn" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AutocompleteCatalogResponseV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "graphTypeId": { "type": "string", "title": "Graphtypeid" },
+          "graphTypeVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Graphtypeversion"
+          },
+          "graphTypeChecksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Graphtypechecksum"
+          },
+          "runtimeChecksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Runtimechecksum"
+          },
+          "iconSetResolutionChecksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Iconsetresolutionchecksum"
+          },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          },
+          "nodeTypes": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Nodetypes"
+          },
+          "linkTypes": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Linktypes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "graphTypeId",
+          "graphTypeVersion",
+          "graphTypeChecksum",
+          "runtimeChecksum",
+          "iconSetResolutionChecksum",
+          "checksum",
+          "nodeTypes",
+          "linkTypes"
+        ],
+        "title": "AutocompleteCatalogResponseV1"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": { "type": "string", "title": "Code" },
+          "message": { "type": "string", "title": "Message" },
+          "details": {
+            "anyOf": [
+              { "additionalProperties": true, "type": "object" },
+              { "type": "null" }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": ["code", "message"],
+        "title": "ErrorBody"
+      },
+      "ErrorResponse": {
+        "properties": { "error": { "$ref": "#/components/schemas/ErrorBody" } },
+        "type": "object",
+        "required": ["error"],
+        "title": "ErrorResponse"
+      },
+      "GraphTypeBundleV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "layoutSetRef": { "$ref": "#/components/schemas/LayoutSetRefV1" },
+          "iconSetRefs": {
+            "items": { "$ref": "#/components/schemas/ProfileIconsetRefV1" },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Iconsetrefs"
+          },
+          "linkSetRef": { "$ref": "#/components/schemas/LinkSetRefV1" },
+          "iconConflictPolicy": {
+            "type": "string",
+            "enum": ["reject", "first-wins", "last-wins"],
+            "title": "Iconconflictpolicy",
+            "default": "reject"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "graphTypeId": { "type": "string", "title": "Graphtypeid" },
+          "graphTypeVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Graphtypeversion"
+          },
+          "nodeTypes": {
+            "items": { "type": "string" },
+            "type": "array",
+            "maxItems": 5000,
+            "minItems": 1,
+            "title": "Nodetypes"
+          },
+          "linkTypes": {
+            "items": { "type": "string" },
+            "type": "array",
+            "maxItems": 256,
+            "minItems": 1,
+            "title": "Linktypes"
+          },
+          "typeIconMap": {
+            "additionalProperties": { "type": "string" },
+            "type": "object",
+            "maxProperties": 5000,
+            "minProperties": 1,
+            "title": "Typeiconmap"
+          },
+          "edgeTypeOverrides": {
+            "additionalProperties": { "additionalProperties": true, "type": "object" },
+            "type": "object",
+            "title": "Edgetypeoverrides"
+          },
+          "iconSetResolutionChecksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Iconsetresolutionchecksum"
+          },
+          "runtimeChecksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Runtimechecksum"
+          },
+          "elkSettings": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Elksettings"
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "layoutSetRef",
+          "iconSetRefs",
+          "linkSetRef",
+          "graphTypeId",
+          "graphTypeVersion",
+          "nodeTypes",
+          "linkTypes",
+          "typeIconMap",
+          "iconSetResolutionChecksum",
+          "runtimeChecksum",
+          "elkSettings",
+          "updatedAt",
+          "checksum"
+        ],
+        "title": "GraphTypeBundleV1"
+      },
+      "GraphTypeCreateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "layoutSetRef": { "$ref": "#/components/schemas/LayoutSetRefV1" },
+          "iconSetRefs": {
+            "items": { "$ref": "#/components/schemas/ProfileIconsetRefV1" },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Iconsetrefs"
+          },
+          "linkSetRef": { "$ref": "#/components/schemas/LinkSetRefV1" },
+          "iconConflictPolicy": {
+            "type": "string",
+            "enum": ["reject", "first-wins", "last-wins"],
+            "title": "Iconconflictpolicy",
+            "default": "reject"
+          },
+          "graphTypeId": { "type": "string", "title": "Graphtypeid" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "layoutSetRef", "iconSetRefs", "linkSetRef", "graphTypeId"],
+        "title": "GraphTypeCreateRequestV1"
+      },
+      "GraphTypeListResponseV1": {
+        "properties": {
+          "graphTypes": {
+            "items": { "$ref": "#/components/schemas/GraphTypeSummaryV1" },
+            "type": "array",
+            "title": "Graphtypes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["graphTypes"],
+        "title": "GraphTypeListResponseV1"
+      },
+      "GraphTypeRecordV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "graphTypeId": { "type": "string", "title": "Graphtypeid" },
+          "draft": { "$ref": "#/components/schemas/GraphTypeBundleV1" },
+          "publishedVersions": {
+            "items": { "$ref": "#/components/schemas/GraphTypeBundleV1" },
+            "type": "array",
+            "title": "Publishedversions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["graphTypeId", "draft"],
+        "title": "GraphTypeRecordV1"
+      },
+      "GraphTypeRuntimeResponseV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "graphTypeId": { "type": "string", "title": "Graphtypeid" },
+          "graphTypeVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Graphtypeversion"
+          },
+          "graphTypeChecksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Graphtypechecksum"
+          },
+          "runtimeChecksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Runtimechecksum"
+          },
+          "conflictPolicy": {
+            "type": "string",
+            "enum": ["reject", "first-wins", "last-wins"],
+            "title": "Conflictpolicy"
+          },
+          "resolvedEntries": {
+            "additionalProperties": { "type": "string" },
+            "type": "object",
+            "title": "Resolvedentries"
+          },
+          "sources": {
+            "items": { "$ref": "#/components/schemas/IconsetSourceRefV1" },
+            "type": "array",
+            "title": "Sources"
+          },
+          "keySources": {
+            "additionalProperties": { "$ref": "#/components/schemas/NodeTypeSourceV1" },
+            "type": "object",
+            "title": "Keysources"
+          },
+          "linkTypes": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Linktypes"
+          },
+          "edgeTypeOverrides": {
+            "additionalProperties": { "additionalProperties": true, "type": "object" },
+            "type": "object",
+            "title": "Edgetypeoverrides"
+          },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "graphTypeId",
+          "graphTypeVersion",
+          "graphTypeChecksum",
+          "runtimeChecksum",
+          "conflictPolicy",
+          "resolvedEntries",
+          "sources",
+          "keySources",
+          "linkTypes",
+          "edgeTypeOverrides",
+          "checksum"
+        ],
+        "title": "GraphTypeRuntimeResponseV1"
+      },
+      "GraphTypeSummaryV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "graphTypeId": { "type": "string", "title": "Graphtypeid" },
+          "name": { "type": "string", "title": "Name" },
+          "draftVersion": { "type": "integer", "title": "Draftversion" },
+          "publishedVersion": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Publishedversion"
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": { "type": "string", "title": "Checksum" },
+          "runtimeChecksum": { "type": "string", "title": "Runtimechecksum" },
+          "iconSetResolutionChecksum": {
+            "type": "string",
+            "title": "Iconsetresolutionchecksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "graphTypeId",
+          "name",
+          "draftVersion",
+          "updatedAt",
+          "checksum",
+          "runtimeChecksum",
+          "iconSetResolutionChecksum"
+        ],
+        "title": "GraphTypeSummaryV1"
+      },
+      "GraphTypeUpdateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "layoutSetRef": { "$ref": "#/components/schemas/LayoutSetRefV1" },
+          "iconSetRefs": {
+            "items": { "$ref": "#/components/schemas/ProfileIconsetRefV1" },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Iconsetrefs"
+          },
+          "linkSetRef": { "$ref": "#/components/schemas/LinkSetRefV1" },
+          "iconConflictPolicy": {
+            "type": "string",
+            "enum": ["reject", "first-wins", "last-wins"],
+            "title": "Iconconflictpolicy",
+            "default": "reject"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "layoutSetRef", "iconSetRefs", "linkSetRef"],
+        "title": "GraphTypeUpdateRequestV1"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": { "$ref": "#/components/schemas/ValidationError" },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IconsetBundleV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "entries": {
+            "additionalProperties": { "type": "string" },
+            "type": "object",
+            "maxProperties": 2000,
+            "minProperties": 1,
+            "title": "Entries"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "iconSetId": { "type": "string", "title": "Iconsetid" },
+          "iconSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Iconsetversion"
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "entries",
+          "iconSetId",
+          "iconSetVersion",
+          "updatedAt",
+          "checksum"
+        ],
+        "title": "IconsetBundleV1"
+      },
+      "IconsetCreateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "entries": {
+            "additionalProperties": { "type": "string" },
+            "type": "object",
+            "maxProperties": 2000,
+            "minProperties": 1,
+            "title": "Entries"
+          },
+          "iconSetId": { "type": "string", "title": "Iconsetid" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "entries", "iconSetId"],
+        "title": "IconsetCreateRequestV1"
+      },
+      "IconsetEntryUpsertRequestV1": {
+        "properties": { "icon": { "type": "string", "title": "Icon" } },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["icon"],
+        "title": "IconsetEntryUpsertRequestV1"
+      },
+      "IconsetListResponseV1": {
+        "properties": {
+          "iconSets": {
+            "items": { "$ref": "#/components/schemas/IconsetSummaryV1" },
+            "type": "array",
+            "title": "Iconsets"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["iconSets"],
+        "title": "IconsetListResponseV1"
+      },
+      "IconsetRecordV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "iconSetId": { "type": "string", "title": "Iconsetid" },
+          "draft": { "$ref": "#/components/schemas/IconsetBundleV1" },
+          "publishedVersions": {
+            "items": { "$ref": "#/components/schemas/IconsetBundleV1" },
+            "type": "array",
+            "title": "Publishedversions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["iconSetId", "draft"],
+        "title": "IconsetRecordV1"
+      },
+      "IconsetResolutionRefV1": {
+        "properties": {
+          "iconSetId": { "type": "string", "title": "Iconsetid" },
+          "stage": {
+            "type": "string",
+            "enum": ["draft", "published"],
+            "title": "Stage",
+            "default": "published"
+          },
+          "iconSetVersion": {
+            "anyOf": [{ "type": "integer", "minimum": 1.0 }, { "type": "null" }],
+            "title": "Iconsetversion"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["iconSetId"],
+        "title": "IconsetResolutionRefV1"
+      },
+      "IconsetResolutionResultV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "conflictPolicy": {
+            "type": "string",
+            "enum": ["reject", "first-wins", "last-wins"],
+            "title": "Conflictpolicy"
+          },
+          "resolvedEntries": {
+            "additionalProperties": { "type": "string" },
+            "type": "object",
+            "title": "Resolvedentries"
+          },
+          "sources": {
+            "items": { "$ref": "#/components/schemas/IconsetSourceRefV1" },
+            "type": "array",
+            "title": "Sources"
+          },
+          "keySources": {
+            "additionalProperties": { "$ref": "#/components/schemas/NodeTypeSourceV1" },
+            "type": "object",
+            "title": "Keysources"
+          },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conflictPolicy",
+          "resolvedEntries",
+          "sources",
+          "keySources",
+          "checksum"
+        ],
+        "title": "IconsetResolutionResultV1"
+      },
+      "IconsetResolveRequestV1": {
+        "properties": {
+          "iconSetRefs": {
+            "items": { "$ref": "#/components/schemas/IconsetResolutionRefV1" },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Iconsetrefs"
+          },
+          "conflictPolicy": {
+            "type": "string",
+            "enum": ["reject", "first-wins", "last-wins"],
+            "title": "Conflictpolicy",
+            "default": "reject"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["iconSetRefs"],
+        "title": "IconsetResolveRequestV1"
+      },
+      "IconsetSourceRefV1": {
+        "properties": {
+          "iconSetId": { "type": "string", "title": "Iconsetid" },
+          "iconSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Iconsetversion"
+          },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["iconSetId", "iconSetVersion", "checksum"],
+        "title": "IconsetSourceRefV1"
+      },
+      "IconsetSummaryV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "iconSetId": { "type": "string", "title": "Iconsetid" },
+          "name": { "type": "string", "title": "Name" },
+          "draftVersion": { "type": "integer", "title": "Draftversion" },
+          "publishedVersion": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Publishedversion"
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": { "type": "string", "title": "Checksum" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["iconSetId", "name", "draftVersion", "updatedAt", "checksum"],
+        "title": "IconsetSummaryV1"
+      },
+      "IconsetUpdateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "entries": {
+            "additionalProperties": { "type": "string" },
+            "type": "object",
+            "maxProperties": 2000,
+            "minProperties": 1,
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "entries"],
+        "title": "IconsetUpdateRequestV1"
+      },
+      "LayoutSetBundleV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "elkSettings": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Elksettings"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "layoutSetId": { "type": "string", "title": "Layoutsetid" },
+          "layoutSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Layoutsetversion"
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "elkSettings",
+          "layoutSetId",
+          "layoutSetVersion",
+          "updatedAt",
+          "checksum"
+        ],
+        "title": "LayoutSetBundleV1"
+      },
+      "LayoutSetCreateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "elkSettings": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Elksettings"
+          },
+          "layoutSetId": { "type": "string", "title": "Layoutsetid" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "elkSettings", "layoutSetId"],
+        "title": "LayoutSetCreateRequestV1"
+      },
+      "LayoutSetEntryUpsertRequestV1": {
+        "properties": { "value": { "title": "Value" } },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["value"],
+        "title": "LayoutSetEntryUpsertRequestV1"
+      },
+      "LayoutSetListResponseV1": {
+        "properties": {
+          "layoutSets": {
+            "items": { "$ref": "#/components/schemas/LayoutSetSummaryV1" },
+            "type": "array",
+            "title": "Layoutsets"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["layoutSets"],
+        "title": "LayoutSetListResponseV1"
+      },
+      "LayoutSetRecordV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "layoutSetId": { "type": "string", "title": "Layoutsetid" },
+          "draft": { "$ref": "#/components/schemas/LayoutSetBundleV1" },
+          "publishedVersions": {
+            "items": { "$ref": "#/components/schemas/LayoutSetBundleV1" },
+            "type": "array",
+            "title": "Publishedversions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["layoutSetId", "draft"],
+        "title": "LayoutSetRecordV1"
+      },
+      "LayoutSetRefV1": {
+        "properties": {
+          "layoutSetId": { "type": "string", "title": "Layoutsetid" },
+          "layoutSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Layoutsetversion"
+          },
+          "checksum": {
+            "anyOf": [
+              { "type": "string", "maxLength": 64, "minLength": 64 },
+              { "type": "null" }
+            ],
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["layoutSetId", "layoutSetVersion"],
+        "title": "LayoutSetRefV1"
+      },
+      "LayoutSetSummaryV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "layoutSetId": { "type": "string", "title": "Layoutsetid" },
+          "name": { "type": "string", "title": "Name" },
+          "draftVersion": { "type": "integer", "title": "Draftversion" },
+          "publishedVersion": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Publishedversion"
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": { "type": "string", "title": "Checksum" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["layoutSetId", "name", "draftVersion", "updatedAt", "checksum"],
+        "title": "LayoutSetSummaryV1"
+      },
+      "LayoutSetUpdateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "elkSettings": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Elksettings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "elkSettings"],
+        "title": "LayoutSetUpdateRequestV1"
+      },
+      "LinkSetBundleV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "entries": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkTypeDefinitionV1"
+            },
+            "type": "object",
+            "maxProperties": 256,
+            "minProperties": 1,
+            "title": "Entries"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "linkSetId": { "type": "string", "title": "Linksetid" },
+          "linkSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Linksetversion"
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "entries",
+          "linkSetId",
+          "linkSetVersion",
+          "updatedAt",
+          "checksum"
+        ],
+        "title": "LinkSetBundleV1"
+      },
+      "LinkSetCreateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "entries": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkTypeDefinitionV1"
+            },
+            "type": "object",
+            "maxProperties": 256,
+            "minProperties": 1,
+            "title": "Entries"
+          },
+          "linkSetId": { "type": "string", "title": "Linksetid" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "entries", "linkSetId"],
+        "title": "LinkSetCreateRequestV1"
+      },
+      "LinkSetEntryUpsertRequestV1": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "elkEdgeType": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Elkedgetype"
+          },
+          "elkProperties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Elkproperties"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["label"],
+        "title": "LinkSetEntryUpsertRequestV1"
+      },
+      "LinkSetListResponseV1": {
+        "properties": {
+          "linkSets": {
+            "items": { "$ref": "#/components/schemas/LinkSetSummaryV1" },
+            "type": "array",
+            "title": "Linksets"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["linkSets"],
+        "title": "LinkSetListResponseV1"
+      },
+      "LinkSetRecordV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "linkSetId": { "type": "string", "title": "Linksetid" },
+          "draft": { "$ref": "#/components/schemas/LinkSetBundleV1" },
+          "publishedVersions": {
+            "items": { "$ref": "#/components/schemas/LinkSetBundleV1" },
+            "type": "array",
+            "title": "Publishedversions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["linkSetId", "draft"],
+        "title": "LinkSetRecordV1"
+      },
+      "LinkSetRefV1": {
+        "properties": {
+          "linkSetId": { "type": "string", "title": "Linksetid" },
+          "linkSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Linksetversion"
+          },
+          "checksum": {
+            "anyOf": [
+              { "type": "string", "maxLength": 64, "minLength": 64 },
+              { "type": "null" }
+            ],
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["linkSetId", "linkSetVersion"],
+        "title": "LinkSetRefV1"
+      },
+      "LinkSetSummaryV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "linkSetId": { "type": "string", "title": "Linksetid" },
+          "name": { "type": "string", "title": "Name" },
+          "draftVersion": { "type": "integer", "title": "Draftversion" },
+          "publishedVersion": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Publishedversion"
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": { "type": "string", "title": "Checksum" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["linkSetId", "name", "draftVersion", "updatedAt", "checksum"],
+        "title": "LinkSetSummaryV1"
+      },
+      "LinkSetUpdateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "entries": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkTypeDefinitionV1"
+            },
+            "type": "object",
+            "maxProperties": 256,
+            "minProperties": 1,
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "entries"],
+        "title": "LinkSetUpdateRequestV1"
+      },
+      "LinkTypeDefinitionV1": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "elkEdgeType": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Elkedgetype"
+          },
+          "elkProperties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Elkproperties"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["label"],
+        "title": "LinkTypeDefinitionV1"
+      },
+      "MinimalEdgeIn": {
+        "properties": {
+          "id": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Id" },
+          "label": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Label"
+          },
+          "type": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Type"
+          },
+          "from": { "type": "string", "title": "From" },
+          "to": { "type": "string", "title": "To" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["from", "to"],
+        "title": "MinimalEdgeIn"
+      },
+      "MinimalGraphIn": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/MinimalNodeIn" },
+                { "type": "string" }
+              ]
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "links": {
+            "items": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/MinimalEdgeIn" },
+                { "type": "string" }
+              ]
+            },
+            "type": "array",
+            "title": "Links"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "MinimalGraphIn"
+      },
+      "MinimalNodeIn": {
+        "properties": {
+          "name": { "type": "string", "title": "Name" },
+          "type": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Type"
+          },
+          "id": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Id" },
+          "nodes": {
+            "items": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/MinimalNodeIn" },
+                { "type": "string" }
+              ]
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "links": {
+            "items": {
+              "anyOf": [
+                { "$ref": "#/components/schemas/MinimalEdgeIn" },
+                { "type": "string" }
+              ]
+            },
+            "type": "array",
+            "title": "Links"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name"],
+        "title": "MinimalNodeIn"
+      },
+      "NodeTypeSourceV1": {
+        "properties": {
+          "key": { "type": "string", "title": "Key" },
+          "icon": { "type": "string", "title": "Icon" },
+          "selectedFrom": { "$ref": "#/components/schemas/IconsetSourceRefV1" },
+          "candidates": {
+            "items": { "$ref": "#/components/schemas/IconsetSourceRefV1" },
+            "type": "array",
+            "title": "Candidates"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["key", "icon", "selectedFrom"],
+        "title": "NodeTypeSourceV1"
+      },
+      "ProfileIconsetRefV1": {
+        "properties": {
+          "iconSetId": { "type": "string", "title": "Iconsetid" },
+          "iconSetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Iconsetversion"
+          },
+          "checksum": {
+            "anyOf": [
+              { "type": "string", "maxLength": 64, "minLength": 64 },
+              { "type": "null" }
+            ],
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["iconSetId", "iconSetVersion"],
+        "title": "ProfileIconsetRefV1"
+      },
+      "ThemeBundleV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "cssBody": { "type": "string", "minLength": 1, "title": "Cssbody" },
+          "variables": {
+            "additionalProperties": { "$ref": "#/components/schemas/ThemeVariableV1" },
+            "type": "object",
+            "maxProperties": 2000,
+            "title": "Variables"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "themeId": { "type": "string", "title": "Themeid" },
+          "themeVersion": { "type": "integer", "minimum": 1.0, "title": "Themeversion" },
+          "renderCss": { "type": "string", "minLength": 1, "title": "Rendercss" },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "cssBody",
+          "themeId",
+          "themeVersion",
+          "renderCss",
+          "updatedAt",
+          "checksum"
+        ],
+        "title": "ThemeBundleV1"
+      },
+      "ThemeCreateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "cssBody": { "type": "string", "minLength": 1, "title": "Cssbody" },
+          "variables": {
+            "additionalProperties": { "$ref": "#/components/schemas/ThemeVariableV1" },
+            "type": "object",
+            "maxProperties": 2000,
+            "title": "Variables"
+          },
+          "themeId": { "type": "string", "title": "Themeid" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "cssBody", "themeId"],
+        "title": "ThemeCreateRequestV1"
+      },
+      "ThemeListResponseV1": {
+        "properties": {
+          "themes": {
+            "items": { "$ref": "#/components/schemas/ThemeSummaryV1" },
+            "type": "array",
+            "title": "Themes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["themes"],
+        "title": "ThemeListResponseV1"
+      },
+      "ThemeRecordV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "themeId": { "type": "string", "title": "Themeid" },
+          "draft": { "$ref": "#/components/schemas/ThemeBundleV1" },
+          "publishedVersions": {
+            "items": { "$ref": "#/components/schemas/ThemeBundleV1" },
+            "type": "array",
+            "title": "Publishedversions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["themeId", "draft"],
+        "title": "ThemeRecordV1"
+      },
+      "ThemeSummaryV1": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "v1",
+            "title": "Schemaversion",
+            "default": "v1"
+          },
+          "themeId": { "type": "string", "title": "Themeid" },
+          "name": { "type": "string", "title": "Name" },
+          "draftVersion": { "type": "integer", "title": "Draftversion" },
+          "publishedVersion": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Publishedversion"
+          },
+          "updatedAt": { "type": "string", "format": "date-time", "title": "Updatedat" },
+          "checksum": { "type": "string", "title": "Checksum" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["themeId", "name", "draftVersion", "updatedAt", "checksum"],
+        "title": "ThemeSummaryV1"
+      },
+      "ThemeUpdateRequestV1": {
+        "properties": {
+          "name": { "type": "string", "maxLength": 120, "minLength": 1, "title": "Name" },
+          "cssBody": { "type": "string", "minLength": 1, "title": "Cssbody" },
+          "variables": {
+            "additionalProperties": { "$ref": "#/components/schemas/ThemeVariableV1" },
+            "type": "object",
+            "maxProperties": 2000,
+            "title": "Variables"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["name", "cssBody"],
+        "title": "ThemeUpdateRequestV1"
+      },
+      "ThemeVariableUpsertRequestV1": {
+        "properties": {
+          "valueType": {
+            "type": "string",
+            "enum": ["color", "float", "length", "percent", "string", "custom"],
+            "title": "Valuetype"
+          },
+          "lightValue": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Lightvalue"
+          },
+          "darkValue": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Darkvalue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["valueType", "lightValue", "darkValue"],
+        "title": "ThemeVariableUpsertRequestV1"
+      },
+      "ThemeVariableV1": {
+        "properties": {
+          "valueType": {
+            "type": "string",
+            "enum": ["color", "float", "length", "percent", "string", "custom"],
+            "title": "Valuetype"
+          },
+          "lightValue": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Lightvalue"
+          },
+          "darkValue": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Darkvalue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["valueType", "lightValue", "darkValue"],
+        "title": "ThemeVariableV1"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": { "type": "string", "title": "Message" },
+          "type": { "type": "string", "title": "Error Type" },
+          "input": { "title": "Input" },
+          "ctx": { "type": "object", "title": "Context" }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
