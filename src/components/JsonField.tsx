@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
 import { FunctionField, type RaRecord } from "react-admin";
 
+import { RawJsonToggle } from "./RawJsonToggle";
+
 interface JsonFieldProps {
   readonly label: string;
   readonly source: string;
+  readonly collapsedByDefault?: boolean;
+  readonly summary?: string;
 }
 
 function getValueByPath(record: RaRecord, path: string): unknown {
@@ -21,30 +25,34 @@ function getValueByPath(record: RaRecord, path: string): unknown {
   return value;
 }
 
-function renderJson(value: unknown): ReactNode {
-  if (value === undefined) {
-    return "-";
-  }
-
+function renderJson(
+  value: unknown,
+  collapsedByDefault: boolean,
+  summary: string | undefined,
+): ReactNode {
   return (
-    <pre
-      style={{
-        margin: 0,
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word",
-        maxWidth: "72ch",
-      }}
-    >
-      {JSON.stringify(value, null, 2)}
-    </pre>
+    <RawJsonToggle
+      value={value}
+      collapsedByDefault={collapsedByDefault}
+      summary={summary}
+      emptyState="-"
+      maxWidth="72ch"
+    />
   );
 }
 
-export function JsonField({ label, source }: JsonFieldProps) {
+export function JsonField({
+  label,
+  source,
+  collapsedByDefault = false,
+  summary,
+}: JsonFieldProps) {
   return (
     <FunctionField
       label={label}
-      render={(record: RaRecord) => renderJson(getValueByPath(record, source))}
+      render={(record: RaRecord) =>
+        renderJson(getValueByPath(record, source), collapsedByDefault, summary)
+      }
     />
   );
 }

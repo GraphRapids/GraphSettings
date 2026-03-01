@@ -15,7 +15,6 @@ import {
   ShowButton,
   SimpleForm,
   SimpleFormIterator,
-  SimpleShowLayout,
   TextField,
   TextInput,
   maxLength,
@@ -25,15 +24,21 @@ import {
   type ResourceProps,
 } from "react-admin";
 
-import { JsonField } from "../components/JsonField";
-import { JsonInput } from "../components/JsonInput";
-import { validateJson } from "../components/jsonValidation";
 import {
-  GraphTypeOperations,
-  IconSetOperations,
-  LayoutSetOperations,
-  LinkSetOperations,
-  ThemeOperations,
+  GraphTypeDraftEditor,
+  GraphTypePublishedView,
+  IconSetCreateEditor,
+  IconSetDraftEditor,
+  IconSetPublishedView,
+  LayoutSetCreateEditor,
+  LayoutSetDraftEditor,
+  LayoutSetPublishedView,
+  LinkSetCreateEditor,
+  LinkSetDraftEditor,
+  LinkSetPublishedView,
+  ThemeCreateEditor,
+  ThemeDraftEditor,
+  ThemePublishedView,
 } from "./ResourceOperations";
 
 const qFilter = [<SearchInput source="q" alwaysOn key="q" />];
@@ -64,7 +69,6 @@ export const iconSetViews: Pick<
         <NumberField source="draftVersion" />
         <NumberField source="publishedVersion" />
         <DateField source="updatedAt" showTime />
-        <TextField source="checksum" />
         <ShowButton />
         <EditButton />
         <DeleteWithConfirmButton />
@@ -73,33 +77,17 @@ export const iconSetViews: Pick<
   ),
   show: () => (
     <Show>
-      <SimpleShowLayout>
-        <TextField source="iconSetId" />
-        <TextField source="name" />
-        <NumberField source="iconSetVersion" label="Draft Version" />
-        <DateField source="updatedAt" showTime />
-        <JsonField label="Entries" source="entries" />
-        <JsonField label="Published Versions" source="publishedVersions" />
-        <IconSetOperations />
-      </SimpleShowLayout>
+      <IconSetPublishedView />
     </Show>
   ),
   create: () => (
-    <Create mutationMode="pessimistic" redirect="list">
-      <SimpleForm>
-        <TextInput source="iconSetId" validate={idLengthValidator} fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-        <JsonInput source="entries" validate={validateJson("object", true)} />
-      </SimpleForm>
+    <Create mutationMode="pessimistic">
+      <IconSetCreateEditor />
     </Create>
   ),
   edit: () => (
     <Edit mutationMode="pessimistic">
-      <SimpleForm>
-        <TextInput source="iconSetId" disabled fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-        <JsonInput source="entries" validate={validateJson("object", true)} />
-      </SimpleForm>
+      <IconSetDraftEditor />
     </Edit>
   ),
 };
@@ -118,7 +106,6 @@ export const layoutSetViews: Pick<
         <NumberField source="draftVersion" />
         <NumberField source="publishedVersion" />
         <DateField source="updatedAt" showTime />
-        <TextField source="checksum" />
         <ShowButton />
         <EditButton />
         <DeleteWithConfirmButton />
@@ -127,33 +114,17 @@ export const layoutSetViews: Pick<
   ),
   show: () => (
     <Show>
-      <SimpleShowLayout>
-        <TextField source="layoutSetId" />
-        <TextField source="name" />
-        <NumberField source="layoutSetVersion" label="Draft Version" />
-        <DateField source="updatedAt" showTime />
-        <JsonField label="ELK Settings" source="elkSettings" />
-        <JsonField label="Published Versions" source="publishedVersions" />
-        <LayoutSetOperations />
-      </SimpleShowLayout>
+      <LayoutSetPublishedView />
     </Show>
   ),
   create: () => (
-    <Create mutationMode="pessimistic" redirect="list">
-      <SimpleForm>
-        <TextInput source="layoutSetId" validate={idLengthValidator} fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-        <JsonInput source="elkSettings" validate={validateJson("object", true)} />
-      </SimpleForm>
+    <Create mutationMode="pessimistic">
+      <LayoutSetCreateEditor />
     </Create>
   ),
   edit: () => (
     <Edit mutationMode="pessimistic">
-      <SimpleForm>
-        <TextInput source="layoutSetId" disabled fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-        <JsonInput source="elkSettings" validate={validateJson("object", true)} />
-      </SimpleForm>
+      <LayoutSetDraftEditor />
     </Edit>
   ),
 };
@@ -172,7 +143,6 @@ export const linkSetViews: Pick<
         <NumberField source="draftVersion" />
         <NumberField source="publishedVersion" />
         <DateField source="updatedAt" showTime />
-        <TextField source="checksum" />
         <ShowButton />
         <EditButton />
         <DeleteWithConfirmButton />
@@ -181,33 +151,17 @@ export const linkSetViews: Pick<
   ),
   show: () => (
     <Show>
-      <SimpleShowLayout>
-        <TextField source="linkSetId" />
-        <TextField source="name" />
-        <NumberField source="linkSetVersion" label="Draft Version" />
-        <DateField source="updatedAt" showTime />
-        <JsonField label="Entries" source="entries" />
-        <JsonField label="Published Versions" source="publishedVersions" />
-        <LinkSetOperations />
-      </SimpleShowLayout>
+      <LinkSetPublishedView />
     </Show>
   ),
   create: () => (
-    <Create mutationMode="pessimistic" redirect="list">
-      <SimpleForm>
-        <TextInput source="linkSetId" validate={idLengthValidator} fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-        <JsonInput source="entries" validate={validateJson("object", true)} />
-      </SimpleForm>
+    <Create mutationMode="pessimistic">
+      <LinkSetCreateEditor />
     </Create>
   ),
   edit: () => (
     <Edit mutationMode="pessimistic">
-      <SimpleForm>
-        <TextInput source="linkSetId" disabled fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-        <JsonInput source="entries" validate={validateJson("object", true)} />
-      </SimpleForm>
+      <LinkSetDraftEditor />
     </Edit>
   ),
 };
@@ -232,7 +186,6 @@ export const graphTypeViews: Pick<
         <NumberField source="draftVersion" />
         <NumberField source="publishedVersion" />
         <DateField source="updatedAt" showTime />
-        <TextField source="runtimeChecksum" />
         <ShowButton />
         <EditButton />
         <DeleteWithConfirmButton />
@@ -241,18 +194,7 @@ export const graphTypeViews: Pick<
   ),
   show: () => (
     <Show>
-      <SimpleShowLayout>
-        <TextField source="graphTypeId" />
-        <TextField source="name" />
-        <NumberField source="graphTypeVersion" label="Draft Version" />
-        <DateField source="updatedAt" showTime />
-        <TextField source="iconConflictPolicy" />
-        <JsonField label="Layout Set Ref" source="layoutSetRef" />
-        <JsonField label="Icon Set Refs" source="iconSetRefs" />
-        <JsonField label="Link Set Ref" source="linkSetRef" />
-        <JsonField label="Published Versions" source="publishedVersions" />
-        <GraphTypeOperations />
-      </SimpleShowLayout>
+      <GraphTypePublishedView />
     </Show>
   ),
   create: () => (
@@ -323,68 +265,7 @@ export const graphTypeViews: Pick<
   ),
   edit: () => (
     <Edit mutationMode="pessimistic">
-      <SimpleForm>
-        <TextInput source="graphTypeId" disabled fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-
-        <TextInput
-          source="layoutSetRef.layoutSetId"
-          label="Layout Set Ref: layoutSetId"
-          validate={requiredField}
-          fullWidth
-        />
-        <NumberInput
-          source="layoutSetRef.layoutSetVersion"
-          label="Layout Set Ref: layoutSetVersion"
-          validate={[requiredField, minValue(1)]}
-          fullWidth
-        />
-        <TextInput
-          source="layoutSetRef.checksum"
-          label="Layout Set Ref: checksum"
-          fullWidth
-        />
-
-        <ArrayInput
-          source="iconSetRefs"
-          label="Icon Set Refs"
-          validate={validateNonEmptyArray}
-        >
-          <SimpleFormIterator>
-            <TextInput source="iconSetId" validate={requiredField} />
-            <NumberInput
-              source="iconSetVersion"
-              validate={[requiredField, minValue(1)]}
-            />
-            <TextInput source="checksum" />
-          </SimpleFormIterator>
-        </ArrayInput>
-
-        <TextInput
-          source="linkSetRef.linkSetId"
-          label="Link Set Ref: linkSetId"
-          validate={requiredField}
-          fullWidth
-        />
-        <NumberInput
-          source="linkSetRef.linkSetVersion"
-          label="Link Set Ref: linkSetVersion"
-          validate={[requiredField, minValue(1)]}
-          fullWidth
-        />
-        <TextInput
-          source="linkSetRef.checksum"
-          label="Link Set Ref: checksum"
-          fullWidth
-        />
-
-        <SelectInput
-          source="iconConflictPolicy"
-          choices={iconConflictChoices}
-          defaultValue="reject"
-          fullWidth
-        />
-      </SimpleForm>
+      <GraphTypeDraftEditor />
     </Edit>
   ),
 };
@@ -403,7 +284,6 @@ export const themeViews: Pick<
         <NumberField source="draftVersion" />
         <NumberField source="publishedVersion" />
         <DateField source="updatedAt" showTime />
-        <TextField source="checksum" />
         <ShowButton />
         <EditButton />
         <DeleteWithConfirmButton />
@@ -412,48 +292,17 @@ export const themeViews: Pick<
   ),
   show: () => (
     <Show>
-      <SimpleShowLayout>
-        <TextField source="themeId" />
-        <TextField source="name" />
-        <NumberField source="themeVersion" label="Draft Version" />
-        <DateField source="updatedAt" showTime />
-        <TextField source="cssBody" />
-        <JsonField label="Variables" source="variables" />
-        <JsonField label="Published Versions" source="publishedVersions" />
-        <ThemeOperations />
-      </SimpleShowLayout>
+      <ThemePublishedView />
     </Show>
   ),
   create: () => (
-    <Create mutationMode="pessimistic" redirect="list">
-      <SimpleForm>
-        <TextInput source="themeId" validate={idLengthValidator} fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-        <TextInput
-          source="cssBody"
-          multiline
-          minRows={8}
-          fullWidth
-          validate={requiredField}
-        />
-        <JsonInput source="variables" validate={validateJson("object", false)} />
-      </SimpleForm>
+    <Create mutationMode="pessimistic">
+      <ThemeCreateEditor />
     </Create>
   ),
   edit: () => (
     <Edit mutationMode="pessimistic">
-      <SimpleForm>
-        <TextInput source="themeId" disabled fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-        <TextInput
-          source="cssBody"
-          multiline
-          minRows={8}
-          fullWidth
-          validate={requiredField}
-        />
-        <JsonInput source="variables" validate={validateJson("object", false)} />
-      </SimpleForm>
+      <ThemeDraftEditor />
     </Edit>
   ),
 };
