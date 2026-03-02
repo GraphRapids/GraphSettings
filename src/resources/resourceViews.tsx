@@ -1,5 +1,4 @@
 import {
-  ArrayInput,
   Create,
   Datagrid,
   DateField,
@@ -8,23 +7,15 @@ import {
   EditButton,
   List,
   NumberField,
-  NumberInput,
   SearchInput,
-  SelectInput,
   Show,
   ShowButton,
-  SimpleForm,
-  SimpleFormIterator,
   TextField,
-  TextInput,
-  maxLength,
-  minLength,
-  minValue,
-  required,
   type ResourceProps,
 } from "react-admin";
 
 import {
+  GraphTypeCreateEditor,
   GraphTypeDraftEditor,
   GraphTypePublishedView,
   IconSetCreateEditor,
@@ -42,18 +33,6 @@ import {
 } from "./ResourceOperations";
 
 const qFilter = [<SearchInput source="q" alwaysOn key="q" />];
-
-const requiredField = required();
-const idLengthValidator = [requiredField, maxLength(120), minLength(1)];
-const nameValidator = [requiredField, maxLength(120), minLength(1)];
-
-function validateNonEmptyArray(value: unknown): string | undefined {
-  if (!Array.isArray(value) || value.length === 0) {
-    return "At least one item is required";
-  }
-
-  return undefined;
-}
 
 export const iconSetViews: Pick<
   ResourceProps,
@@ -166,12 +145,6 @@ export const linkSetViews: Pick<
   ),
 };
 
-const iconConflictChoices = [
-  { id: "reject", name: "reject" },
-  { id: "first-wins", name: "first-wins" },
-  { id: "last-wins", name: "last-wins" },
-];
-
 export const graphTypeViews: Pick<
   ResourceProps,
   "name" | "options" | "list" | "show" | "create" | "edit"
@@ -198,69 +171,8 @@ export const graphTypeViews: Pick<
     </Show>
   ),
   create: () => (
-    <Create mutationMode="pessimistic" redirect="list">
-      <SimpleForm>
-        <TextInput source="graphTypeId" validate={idLengthValidator} fullWidth />
-        <TextInput source="name" validate={nameValidator} fullWidth />
-
-        <TextInput
-          source="layoutSetRef.layoutSetId"
-          label="Layout Set Ref: layoutSetId"
-          validate={requiredField}
-          fullWidth
-        />
-        <NumberInput
-          source="layoutSetRef.layoutSetVersion"
-          label="Layout Set Ref: layoutSetVersion"
-          validate={[requiredField, minValue(1)]}
-          fullWidth
-        />
-        <TextInput
-          source="layoutSetRef.checksum"
-          label="Layout Set Ref: checksum"
-          fullWidth
-        />
-
-        <ArrayInput
-          source="iconSetRefs"
-          label="Icon Set Refs"
-          validate={validateNonEmptyArray}
-        >
-          <SimpleFormIterator>
-            <TextInput source="iconSetId" validate={requiredField} />
-            <NumberInput
-              source="iconSetVersion"
-              validate={[requiredField, minValue(1)]}
-            />
-            <TextInput source="checksum" />
-          </SimpleFormIterator>
-        </ArrayInput>
-
-        <TextInput
-          source="linkSetRef.linkSetId"
-          label="Link Set Ref: linkSetId"
-          validate={requiredField}
-          fullWidth
-        />
-        <NumberInput
-          source="linkSetRef.linkSetVersion"
-          label="Link Set Ref: linkSetVersion"
-          validate={[requiredField, minValue(1)]}
-          fullWidth
-        />
-        <TextInput
-          source="linkSetRef.checksum"
-          label="Link Set Ref: checksum"
-          fullWidth
-        />
-
-        <SelectInput
-          source="iconConflictPolicy"
-          choices={iconConflictChoices}
-          defaultValue="reject"
-          fullWidth
-        />
-      </SimpleForm>
+    <Create mutationMode="pessimistic">
+      <GraphTypeCreateEditor />
     </Create>
   ),
   edit: () => (

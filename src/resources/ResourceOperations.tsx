@@ -45,6 +45,7 @@ import {
 } from "../api/scopedApiAdapter";
 import type {
   GraphTypeBundle,
+  GraphTypeCreateRequest,
   GraphTypeUpdateRequest,
   IconSetBundle,
   IconSetCreateRequest,
@@ -5776,6 +5777,553 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
             </Button>
           </DialogActions>
         </Dialog>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function GraphTypeCreateEditor() {
+  const notify = useNotify();
+  const redirect = useRedirect();
+  const refresh = useRefresh();
+
+  const [graphTypeId, setGraphTypeId] = useState("");
+  const [draftName, setDraftName] = useState("");
+  const [iconConflictPolicy, setIconConflictPolicy] = useState<
+    "reject" | "first-wins" | "last-wins"
+  >("reject");
+
+  const [layoutSetId, setLayoutSetId] = useState("");
+  const [layoutSetVersion, setLayoutSetVersion] = useState<number | null>(null);
+  const [layoutVersionOptions, setLayoutVersionOptions] = useState<number[]>([]);
+
+  const [linkSetId, setLinkSetId] = useState("");
+  const [linkSetVersion, setLinkSetVersion] = useState<number | null>(null);
+  const [linkVersionOptions, setLinkVersionOptions] = useState<number[]>([]);
+
+  const [iconRows, setIconRows] = useState<GraphIconSetRefRow[]>([
+    { rowId: 0, iconSetId: "", iconSetVersion: null },
+  ]);
+  const [iconVersionOptionsById, setIconVersionOptionsById] = useState<
+    Record<string, number[]>
+  >({});
+
+  const [layoutOptions, setLayoutOptions] = useState<LayoutSetSummary[]>([]);
+  const [iconOptions, setIconOptions] = useState<IconSetSummary[]>([]);
+  const [linkOptions, setLinkOptions] = useState<LinkSetSummary[]>([]);
+
+  const [busy, setBusy] = useState(false);
+  const [loadingLookups, setLoadingLookups] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const iconRowIdRef = useRef(1);
+
+  const createIconRow = useCallback(
+    (iconSetId = "", iconSetVersion: number | null = null): GraphIconSetRefRow => ({
+      rowId: iconRowIdRef.current++,
+      iconSetId,
+      iconSetVersion,
+    }),
+    [],
+  );
+
+  const loadLayoutVersions = useCallback(
+    async (targetLayoutSetId: string, preferredVersion: number | null) => {
+      if (!targetLayoutSetId) {
+        setLayoutVersionOptions([]);
+        setLayoutSetVersion(null);
+        return;
+      }
+
+      try {
+        const layoutRecord = await scopedApiAdapter.get("layout-sets", targetLayoutSetId);
+        const versions = extractPublishedVersionNumbers(layoutRecord, "layoutSetVersion");
+        setLayoutVersionOptions(versions);
+        setLayoutSetVersion((current) => {
+          const candidate = preferredVersion ?? current;
+          if (candidate !== null && versions.includes(candidate)) {
+            return candidate;
+          }
+          return versions[0] ?? null;
+        });
+      } catch (error) {
+        const message = toErrorMessage(error);
+        setErrorMessage(message);
+        notify(message, { type: "error" });
+        setLayoutVersionOptions([]);
+        setLayoutSetVersion(null);
+      }
+    },
+    [notify],
+  );
+
+  const loadLinkVersions = useCallback(
+    async (targetLinkSetId: string, preferredVersion: number | null) => {
+      if (!targetLinkSetId) {
+        setLinkVersionOptions([]);
+        setLinkSetVersion(null);
+        return;
+      }
+
+      try {
+        const linkRecord = await scopedApiAdapter.get("link-sets", targetLinkSetId);
+        const versions = extractPublishedVersionNumbers(linkRecord, "linkSetVersion");
+        setLinkVersionOptions(versions);
+        setLinkSetVersion((current) => {
+          const candidate = preferredVersion ?? current;
+          if (candidate !== null && versions.includes(candidate)) {
+            return candidate;
+          }
+          return versions[0] ?? null;
+        });
+      } catch (error) {
+        const message = toErrorMessage(error);
+        setErrorMessage(message);
+        notify(message, { type: "error" });
+        setLinkVersionOptions([]);
+        setLinkSetVersion(null);
+      }
+    },
+    [notify],
+  );
+
+  const loadIconVersions = useCallback(
+    async (targetIconSetId: string): Promise<number[]> => {
+      if (!targetIconSetId) {
+        return [];
+      }
+
+      const cached = iconVersionOptionsById[targetIconSetId];
+      if (cached) {
+        return cached;
+      }
+
+      try {
+        const iconRecord = await scopedApiAdapter.get("icon-sets", targetIconSetId);
+        const versions = extractPublishedVersionNumbers(iconRecord, "iconSetVersion");
+        setIconVersionOptionsById((current) => ({
+          ...current,
+          [targetIconSetId]: versions,
+        }));
+        return versions;
+      } catch (error) {
+        const message = toErrorMessage(error);
+        setErrorMessage(message);
+        notify(message, { type: "error" });
+        setIconVersionOptionsById((current) => ({
+          ...current,
+          [targetIconSetId]: [],
+        }));
+        return [];
+      }
+    },
+    [iconVersionOptionsById, notify],
+  );
+
+  const loadLookupOptions = useCallback(async () => {
+    setLoadingLookups(true);
+    setErrorMessage(null);
+    try {
+      const [layoutList, iconList, linkList] = await Promise.all([
+        scopedApiAdapter.list("layout-sets") as Promise<LayoutSetSummary[]>,
+        scopedApiAdapter.list("icon-sets") as Promise<IconSetSummary[]>,
+        scopedApiAdapter.list("link-sets") as Promise<LinkSetSummary[]>,
+      ]);
+
+      setLayoutOptions(
+        layoutList
+          .filter((item) => typeof item.publishedVersion === "number")
+          .sort((left, right) => left.layoutSetId.localeCompare(right.layoutSetId)),
+      );
+      setIconOptions(
+        iconList
+          .filter((item) => typeof item.publishedVersion === "number")
+          .sort((left, right) => left.iconSetId.localeCompare(right.iconSetId)),
+      );
+      setLinkOptions(
+        linkList
+          .filter((item) => typeof item.publishedVersion === "number")
+          .sort((left, right) => left.linkSetId.localeCompare(right.linkSetId)),
+      );
+    } catch (error) {
+      const message = toErrorMessage(error);
+      setErrorMessage(message);
+      notify(message, { type: "error" });
+    } finally {
+      setLoadingLookups(false);
+    }
+  }, [notify]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadLookupOptions();
+    }, 0);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [loadLookupOptions]);
+
+  const updateLayoutSet = (targetLayoutSetId: string) => {
+    setLayoutSetId(targetLayoutSetId);
+    setLayoutSetVersion(null);
+    void loadLayoutVersions(targetLayoutSetId, null);
+  };
+
+  const updateLinkSet = (targetLinkSetId: string) => {
+    setLinkSetId(targetLinkSetId);
+    setLinkSetVersion(null);
+    void loadLinkVersions(targetLinkSetId, null);
+  };
+
+  const addIconSetRow = () => {
+    setIconRows((current) => [...current, createIconRow()]);
+  };
+
+  const removeIconSetRow = (rowId: number) => {
+    setIconRows((current) => current.filter((row) => row.rowId !== rowId));
+  };
+
+  const updateIconSetId = (rowId: number, targetIconSetId: string) => {
+    setIconRows((current) =>
+      current.map((row) =>
+        row.rowId === rowId
+          ? {
+              ...row,
+              iconSetId: targetIconSetId,
+              iconSetVersion: null,
+            }
+          : row,
+      ),
+    );
+
+    if (!targetIconSetId) {
+      return;
+    }
+
+    void loadIconVersions(targetIconSetId).then((versions) => {
+      setIconRows((current) =>
+        current.map((row) =>
+          row.rowId === rowId
+            ? {
+                ...row,
+                iconSetVersion: versions[0] ?? null,
+              }
+            : row,
+        ),
+      );
+    });
+  };
+
+  const updateIconSetVersion = (rowId: number, value: string) => {
+    const parsed = Number(value);
+    setIconRows((current) =>
+      current.map((row) =>
+        row.rowId === rowId
+          ? {
+              ...row,
+              iconSetVersion: Number.isFinite(parsed) ? parsed : null,
+            }
+          : row,
+      ),
+    );
+  };
+
+  const clearForm = () => {
+    setGraphTypeId("");
+    setDraftName("");
+    setIconConflictPolicy("reject");
+    setLayoutSetId("");
+    setLayoutSetVersion(null);
+    setLayoutVersionOptions([]);
+    setLinkSetId("");
+    setLinkSetVersion(null);
+    setLinkVersionOptions([]);
+    setIconRows([{ rowId: 0, iconSetId: "", iconSetVersion: null }]);
+    setIconVersionOptionsById({});
+    setErrorMessage(null);
+    iconRowIdRef.current = 1;
+  };
+
+  const validateAndBuildPayload = (): GraphTypeCreateRequest => {
+    const normalizedId = graphTypeId.trim();
+    if (normalizedId.length === 0) {
+      throw new Error("Graph type ID is required.");
+    }
+
+    const normalizedName = draftName.trim();
+    if (normalizedName.length === 0) {
+      throw new Error("Graph type name is required.");
+    }
+
+    if (!layoutSetId || layoutSetVersion === null) {
+      throw new Error("Layout set and published version are required.");
+    }
+
+    if (!linkSetId || linkSetVersion === null) {
+      throw new Error("Link set and published version are required.");
+    }
+
+    const normalizedIconSetRefs = iconRows
+      .map((row) => ({
+        iconSetId: row.iconSetId.trim(),
+        iconSetVersion: row.iconSetVersion,
+      }))
+      .filter((row) => row.iconSetId.length > 0)
+      .filter(
+        (row): row is { iconSetId: string; iconSetVersion: number } =>
+          row.iconSetVersion !== null,
+      );
+
+    if (normalizedIconSetRefs.length === 0) {
+      throw new Error("At least one icon set reference is required.");
+    }
+
+    return {
+      graphTypeId: normalizedId,
+      name: normalizedName,
+      layoutSetRef: {
+        layoutSetId,
+        layoutSetVersion,
+      },
+      iconSetRefs: normalizedIconSetRefs,
+      linkSetRef: {
+        linkSetId,
+        linkSetVersion,
+      },
+      iconConflictPolicy,
+    };
+  };
+
+  const createGraphType = async () => {
+    setBusy(true);
+    setErrorMessage(null);
+    try {
+      const payload = validateAndBuildPayload();
+      await scopedApiAdapter.create("graph-types", payload);
+      refresh();
+      notify(`Graph type '${payload.graphTypeId}' created as draft.`, {
+        type: "success",
+      });
+      redirect(`/graph-types/${payload.graphTypeId}/edit`);
+    } catch (error) {
+      const message = toErrorMessage(error);
+      setErrorMessage(message);
+      notify(message, { type: "error" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card variant="outlined">
+      <CardHeader title="Create Graph Type" />
+      <CardContent>
+        <Stack spacing={2}>
+          <Alert severity="info">
+            No JSON needed. Select published layout/icon/link sets to create a draft graph
+            type.
+          </Alert>
+          <TextField
+            label="Graph Type ID"
+            value={graphTypeId}
+            onChange={(event) => setGraphTypeId(event.target.value)}
+            placeholder="e.g. app-graph"
+            fullWidth
+            size="small"
+          />
+          <TextField
+            label="Name"
+            value={draftName}
+            onChange={(event) => setDraftName(event.target.value)}
+            placeholder="e.g. App Graph Type"
+            fullWidth
+            size="small"
+          />
+          <TextField
+            select
+            label="Icon Conflict Policy"
+            value={iconConflictPolicy}
+            onChange={(event) =>
+              setIconConflictPolicy(
+                event.target.value as "reject" | "first-wins" | "last-wins",
+              )
+            }
+            fullWidth
+            size="small"
+          >
+            {conflictOptions.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <SectionHeader title="Layout Set" />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <TextField
+              select
+              label="Layout Set"
+              value={layoutSetId}
+              onChange={(event) => updateLayoutSet(event.target.value)}
+              fullWidth
+              size="small"
+              disabled={loadingLookups}
+            >
+              <MenuItem value="">Select layout set</MenuItem>
+              {layoutOptions.map((option) => (
+                <MenuItem key={option.layoutSetId} value={option.layoutSetId}>
+                  {option.layoutSetId} ({option.name})
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              label="Version"
+              value={layoutSetVersion ?? ""}
+              onChange={(event) => {
+                const parsed = Number(event.target.value);
+                setLayoutSetVersion(Number.isFinite(parsed) ? parsed : null);
+              }}
+              fullWidth
+              size="small"
+              disabled={!layoutSetId || layoutVersionOptions.length === 0}
+            >
+              {layoutVersionOptions.map((version) => (
+                <MenuItem key={version} value={version}>
+                  v{version}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Stack>
+
+          <SectionHeader title="Icon Sets" />
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Icon Set</TableCell>
+                <TableCell>Version</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {iconRows.map((row) => {
+                const iconVersionOptions = row.iconSetId
+                  ? (iconVersionOptionsById[row.iconSetId] ?? [])
+                  : [];
+
+                return (
+                  <TableRow key={row.rowId}>
+                    <TableCell>
+                      <TextField
+                        select
+                        size="small"
+                        fullWidth
+                        value={row.iconSetId}
+                        onChange={(event) =>
+                          updateIconSetId(row.rowId, event.target.value)
+                        }
+                        disabled={loadingLookups}
+                      >
+                        <MenuItem value="">Select icon set</MenuItem>
+                        {iconOptions.map((option) => (
+                          <MenuItem key={option.iconSetId} value={option.iconSetId}>
+                            {option.iconSetId} ({option.name})
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        select
+                        size="small"
+                        fullWidth
+                        value={row.iconSetVersion ?? ""}
+                        onChange={(event) =>
+                          updateIconSetVersion(row.rowId, event.target.value)
+                        }
+                        disabled={!row.iconSetId || iconVersionOptions.length === 0}
+                      >
+                        {iconVersionOptions.map((version) => (
+                          <MenuItem key={version} value={version}>
+                            v{version}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Tooltip title="Remove">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => removeIconSetRow(row.rowId)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={addIconSetRow}
+            disabled={loadingLookups}
+          >
+            Add Icon Set
+          </Button>
+
+          <SectionHeader title="Link Set" />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <TextField
+              select
+              label="Link Set"
+              value={linkSetId}
+              onChange={(event) => updateLinkSet(event.target.value)}
+              fullWidth
+              size="small"
+              disabled={loadingLookups}
+            >
+              <MenuItem value="">Select link set</MenuItem>
+              {linkOptions.map((option) => (
+                <MenuItem key={option.linkSetId} value={option.linkSetId}>
+                  {option.linkSetId} ({option.name})
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              label="Version"
+              value={linkSetVersion ?? ""}
+              onChange={(event) => {
+                const parsed = Number(event.target.value);
+                setLinkSetVersion(Number.isFinite(parsed) ? parsed : null);
+              }}
+              fullWidth
+              size="small"
+              disabled={!linkSetId || linkVersionOptions.length === 0}
+            >
+              {linkVersionOptions.map((version) => (
+                <MenuItem key={version} value={version}>
+                  v{version}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Stack>
+
+          <PanelError message={errorMessage} />
+
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <Button variant="contained" onClick={createGraphType} disabled={busy}>
+              Create Graph Type
+            </Button>
+            <Button variant="outlined" onClick={clearForm} disabled={busy}>
+              Clear
+            </Button>
+          </Stack>
+        </Stack>
       </CardContent>
     </Card>
   );
