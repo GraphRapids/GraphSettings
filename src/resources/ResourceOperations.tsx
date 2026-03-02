@@ -6589,9 +6589,72 @@ export function GraphTypeDraftEditor() {
   const iconRowIdRef = useRef(1);
   const appliedDraftSignatureRef = useRef<string | null>(null);
 
-  const draftSignature = `${resourceId ?? ""}:${
-    typeof record?.graphTypeVersion === "number" ? record.graphTypeVersion : ""
-  }:${typeof record?.updatedAt === "string" ? record.updatedAt : ""}`;
+  const draftSource = useMemo(() => {
+    if (!isObjectRecord(record)) {
+      return null;
+    }
+
+    if (isObjectRecord(record.draft)) {
+      return record.draft;
+    }
+
+    return record;
+  }, [record]);
+
+  const hasDraftData = useMemo(() => {
+    if (!draftSource) {
+      return false;
+    }
+
+    return (
+      typeof draftSource.name === "string" ||
+      isObjectRecord(draftSource.layoutSetRef) ||
+      isObjectRecord(draftSource.linkSetRef) ||
+      Array.isArray(draftSource.iconSetRefs)
+    );
+  }, [draftSource]);
+
+  const draftSignature = useMemo(() => {
+    if (!draftSource) {
+      return `${resourceId ?? ""}:empty`;
+    }
+
+    const layoutRef = parseGraphLayoutSetRef(draftSource.layoutSetRef);
+    const linkRef = parseGraphLinkSetRef(draftSource.linkSetRef);
+    const iconRefSignature = parseGraphIconSetRefs(draftSource.iconSetRefs)
+      .map((ref) => `${ref.iconSetId}:${ref.iconSetVersion}`)
+      .sort((left, right) => left.localeCompare(right))
+      .join("|");
+
+    const version =
+      typeof draftSource.graphTypeVersion === "number"
+        ? String(draftSource.graphTypeVersion)
+        : typeof record?.draftVersion === "number"
+          ? String(record.draftVersion)
+          : "";
+    const updatedAt =
+      typeof draftSource.updatedAt === "string"
+        ? draftSource.updatedAt
+        : typeof record?.updatedAt === "string"
+          ? record.updatedAt
+          : "";
+    const name = typeof draftSource.name === "string" ? draftSource.name : "";
+    const iconPolicy =
+      typeof draftSource.iconConflictPolicy === "string"
+        ? draftSource.iconConflictPolicy
+        : "";
+
+    return [
+      resourceId ?? "",
+      version,
+      updatedAt,
+      name,
+      iconPolicy,
+      layoutRef ? `${layoutRef.layoutSetId}:${layoutRef.layoutSetVersion}` : "",
+      linkRef ? `${linkRef.linkSetId}:${linkRef.linkSetVersion}` : "",
+      iconRefSignature,
+    ].join("::");
+  }, [draftSource, record?.draftVersion, record?.updatedAt, resourceId]);
 
   const createIconRow = useCallback(
     (iconSetId = "", iconSetVersion: number | null = null): GraphIconSetRefRow => ({
@@ -6814,6 +6877,10 @@ export function GraphTypeDraftEditor() {
   }, [loadLookupOptions]);
 
   useEffect(() => {
+    if (!hasDraftData) {
+      return;
+    }
+
     if (appliedDraftSignatureRef.current === draftSignature) {
       return;
     }
@@ -6828,7 +6895,7 @@ export function GraphTypeDraftEditor() {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [applyDraftSnapshot, draftSignature, record]);
+  }, [applyDraftSnapshot, draftSignature, hasDraftData, record]);
 
   const updateLayoutSet = (targetLayoutSetId: string) => {
     setLayoutSetId(targetLayoutSetId);
