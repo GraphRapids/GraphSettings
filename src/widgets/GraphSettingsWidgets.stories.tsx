@@ -54,6 +54,7 @@ export const FullApp: Story = {
         title="GraphSettings Suite"
         dataProvider={makeDataProvider()}
         store={makeStore()}
+        chrome="full"
       />
     </StoryRouteReset>
   ),
