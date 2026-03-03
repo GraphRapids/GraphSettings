@@ -146,6 +146,56 @@ const variableTypeOptions: ThemeVariableUpsertRequest["valueType"][] = [
   "string",
   "custom",
 ];
+const themeVariableEmptyDisplay = "—";
+
+function isThemeVariableValueType(
+  value: unknown,
+): value is ThemeVariableUpsertRequest["valueType"] {
+  return (
+    typeof value === "string" &&
+    (variableTypeOptions as readonly string[]).includes(value)
+  );
+}
+
+function isColorThemeVariable(
+  valueType: ThemeVariableUpsertRequest["valueType"],
+): boolean {
+  return valueType === "color";
+}
+
+function normalizeThemeVariableText(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeThemeVariableEntry(value: unknown): ThemeVariableUpsertRequest | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+
+  const source = value as Record<string, unknown>;
+  const valueType = source.valueType;
+  if (!isThemeVariableValueType(valueType)) {
+    return null;
+  }
+
+  if (isColorThemeVariable(valueType)) {
+    return {
+      valueType,
+      lightValue: normalizeThemeVariableText(source.lightValue),
+      darkValue: normalizeThemeVariableText(source.darkValue),
+    };
+  }
+
+  return {
+    valueType,
+    value: normalizeThemeVariableText(source.value),
+  };
+}
+
+function themeVariableDisplayValue(value: string | null | undefined): string {
+  const normalized = normalizeThemeVariableText(value);
+  return normalized.length > 0 ? normalized : themeVariableEmptyDisplay;
+}
 
 function parseVersionOrThrow(value: string): number | undefined {
   const trimmed = value.trim();
@@ -760,26 +810,11 @@ function normalizeThemeVariables(
 
   const output: Record<string, ThemeVariableUpsertRequest> = {};
   for (const [key, variable] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof variable !== "object" || variable === null || Array.isArray(variable)) {
+    const normalized = normalizeThemeVariableEntry(variable);
+    if (!normalized) {
       continue;
     }
-    const source = variable as Record<string, unknown>;
-    const valueType = source.valueType;
-    const lightValue = String(source.lightValue ?? "").trim();
-    const darkValue = String(source.darkValue ?? "").trim();
-    if (
-      !valueType ||
-      typeof valueType !== "string" ||
-      lightValue.length === 0 ||
-      darkValue.length === 0
-    ) {
-      continue;
-    }
-    output[String(key)] = {
-      valueType: valueType as ThemeVariableUpsertRequest["valueType"],
-      lightValue,
-      darkValue,
-    };
+    output[String(key)] = normalized;
   }
 
   return output;
@@ -3969,6 +4004,7 @@ export function ThemePublishedView() {
                     <TableRow>
                       <TableCell>Key</TableCell>
                       <TableCell>Type</TableCell>
+                      <TableCell>Value</TableCell>
                       <TableCell>Light</TableCell>
                       <TableCell>Dark</TableCell>
                     </TableRow>
@@ -3976,10 +4012,27 @@ export function ThemePublishedView() {
                   <TableBody>
                     {variableRows.map((row) => (
                       <TableRow key={row.key}>
-                        <TableCell>{row.key}</TableCell>
-                        <TableCell>{row.value.valueType}</TableCell>
-                        <TableCell>{row.value.lightValue}</TableCell>
-                        <TableCell>{row.value.darkValue}</TableCell>
+                        {isColorThemeVariable(row.value.valueType) ? (
+                          <>
+                            <TableCell>{row.key}</TableCell>
+                            <TableCell>{row.value.valueType}</TableCell>
+                            <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                            <TableCell>
+                              {themeVariableDisplayValue(row.value.lightValue)}
+                            </TableCell>
+                            <TableCell>
+                              {themeVariableDisplayValue(row.value.darkValue)}
+                            </TableCell>
+                          </>
+                        ) : (
+                          <>
+                            <TableCell>{row.key}</TableCell>
+                            <TableCell>{row.value.valueType}</TableCell>
+                            <TableCell>{themeVariableDisplayValue(row.value.value)}</TableCell>
+                            <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                            <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                          </>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -4016,6 +4069,7 @@ export function ThemeDraftEditor() {
   const [keyInput, setKeyInput] = useState("");
   const [valueType, setValueType] =
     useState<ThemeVariableUpsertRequest["valueType"]>("color");
+  const [valueInput, setValueInput] = useState("");
   const [lightValue, setLightValue] = useState("");
   const [darkValue, setDarkValue] = useState("");
   const appliedDraftSignatureRef = useRef<string | null>(null);
@@ -4031,6 +4085,7 @@ export function ThemeDraftEditor() {
         .sort((left, right) => left.key.localeCompare(right.key)),
     [variables],
   );
+  const isColorDialogType = isColorThemeVariable(valueType);
 
   useEffect(() => {
     if (appliedDraftSignatureRef.current === draftSignature) {
@@ -4048,6 +4103,7 @@ export function ThemeDraftEditor() {
     setEditingKey(null);
     setKeyInput("");
     setValueType("color");
+    setValueInput("");
     setLightValue("");
     setDarkValue("");
     setDialogOpen(true);
@@ -4057,25 +4113,50 @@ export function ThemeDraftEditor() {
     setEditingKey(row.key);
     setKeyInput(row.key);
     setValueType(row.value.valueType);
-    setLightValue(row.value.lightValue);
-    setDarkValue(row.value.darkValue);
+    if (isColorThemeVariable(row.value.valueType)) {
+      setValueInput("");
+      setLightValue(normalizeThemeVariableText(row.value.lightValue));
+      setDarkValue(normalizeThemeVariableText(row.value.darkValue));
+    } else {
+      setValueInput(normalizeThemeVariableText(row.value.value));
+      setLightValue("");
+      setDarkValue("");
+    }
     setDialogOpen(true);
   };
 
   const saveVariableLocal = () => {
     const normalizedKey = keyInput.trim();
-    const normalizedLight = lightValue.trim();
-    const normalizedDark = darkValue.trim();
-
-    if (
-      normalizedKey.length === 0 ||
-      normalizedLight.length === 0 ||
-      normalizedDark.length === 0
-    ) {
-      notify("Variable key, light value, and dark value are required.", {
-        type: "warning",
-      });
+    if (normalizedKey.length === 0) {
+      notify("Variable key is required.", { type: "warning" });
       return;
+    }
+
+    let variablePayload: ThemeVariableUpsertRequest;
+    if (isColorThemeVariable(valueType)) {
+      const normalizedLight = lightValue.trim();
+      const normalizedDark = darkValue.trim();
+      if (normalizedLight.length === 0 || normalizedDark.length === 0) {
+        notify("Color variables require both light and dark values.", {
+          type: "warning",
+        });
+        return;
+      }
+      variablePayload = {
+        valueType,
+        lightValue: normalizedLight,
+        darkValue: normalizedDark,
+      };
+    } else {
+      const normalizedValue = valueInput.trim();
+      if (normalizedValue.length === 0) {
+        notify("Non-color variables require a value.", { type: "warning" });
+        return;
+      }
+      variablePayload = {
+        valueType,
+        value: normalizedValue,
+      };
     }
 
     setVariables((current) => {
@@ -4083,11 +4164,7 @@ export function ThemeDraftEditor() {
       if (editingKey && editingKey !== normalizedKey) {
         delete next[editingKey];
       }
-      next[normalizedKey] = {
-        valueType,
-        lightValue: normalizedLight,
-        darkValue: normalizedDark,
-      };
+      next[normalizedKey] = variablePayload;
       return next;
     });
     setDialogOpen(false);
@@ -4283,6 +4360,7 @@ export function ThemeDraftEditor() {
                 <TableRow>
                   <TableCell>Key</TableCell>
                   <TableCell>Type</TableCell>
+                  <TableCell>Value</TableCell>
                   <TableCell>Light</TableCell>
                   <TableCell>Dark</TableCell>
                   <TableCell align="right">Actions</TableCell>
@@ -4291,10 +4369,23 @@ export function ThemeDraftEditor() {
               <TableBody>
                 {rows.map((row) => (
                   <TableRow key={row.key}>
-                    <TableCell>{row.key}</TableCell>
-                    <TableCell>{row.value.valueType}</TableCell>
-                    <TableCell>{row.value.lightValue}</TableCell>
-                    <TableCell>{row.value.darkValue}</TableCell>
+                    {isColorThemeVariable(row.value.valueType) ? (
+                      <>
+                        <TableCell>{row.key}</TableCell>
+                        <TableCell>{row.value.valueType}</TableCell>
+                        <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                        <TableCell>{themeVariableDisplayValue(row.value.lightValue)}</TableCell>
+                        <TableCell>{themeVariableDisplayValue(row.value.darkValue)}</TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell>{row.key}</TableCell>
+                        <TableCell>{row.value.valueType}</TableCell>
+                        <TableCell>{themeVariableDisplayValue(row.value.value)}</TableCell>
+                        <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                        <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                      </>
+                    )}
                     <TableCell align="right">
                       <Tooltip title="Edit">
                         <IconButton size="small" onClick={() => openEdit(row)}>
@@ -4337,11 +4428,16 @@ export function ThemeDraftEditor() {
                 select
                 label="Value Type"
                 value={valueType}
-                onChange={(event) =>
-                  setValueType(
-                    event.target.value as ThemeVariableUpsertRequest["valueType"],
-                  )
-                }
+                onChange={(event) => {
+                  const nextType = event.target.value as ThemeVariableUpsertRequest["valueType"];
+                  setValueType(nextType);
+                  if (isColorThemeVariable(nextType)) {
+                    setValueInput("");
+                  } else {
+                    setLightValue("");
+                    setDarkValue("");
+                  }
+                }}
                 fullWidth
               >
                 {variableTypeOptions.map((option) => (
@@ -4350,18 +4446,29 @@ export function ThemeDraftEditor() {
                   </MenuItem>
                 ))}
               </TextField>
-              <TextField
-                label="Light Value"
-                value={lightValue}
-                onChange={(event) => setLightValue(event.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Dark Value"
-                value={darkValue}
-                onChange={(event) => setDarkValue(event.target.value)}
-                fullWidth
-              />
+              {isColorDialogType ? (
+                <>
+                  <TextField
+                    label="Light Value"
+                    value={lightValue}
+                    onChange={(event) => setLightValue(event.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Dark Value"
+                    value={darkValue}
+                    onChange={(event) => setDarkValue(event.target.value)}
+                    fullWidth
+                  />
+                </>
+              ) : (
+                <TextField
+                  label="Value"
+                  value={valueInput}
+                  onChange={(event) => setValueInput(event.target.value)}
+                  fullWidth
+                />
+              )}
             </Stack>
           </DialogContent>
           <DialogActions>
@@ -5535,6 +5642,7 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
   const [keyInput, setKeyInput] = useState("");
   const [valueType, setValueType] =
     useState<ThemeVariableUpsertRequest["valueType"]>("color");
+  const [valueInput, setValueInput] = useState("");
   const [lightValue, setLightValue] = useState("");
   const [darkValue, setDarkValue] = useState("");
 
@@ -5545,6 +5653,7 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
         .sort((left, right) => left.key.localeCompare(right.key)),
     [variables],
   );
+  const isColorDialogType = isColorThemeVariable(valueType);
 
   if (!resourceId) {
     return <Alert severity="info">Record ID is not available.</Alert>;
@@ -5558,7 +5667,7 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
         stage: query.stage,
         version: parseVersionOrThrow(query.version),
       });
-      setVariables(payload.variables as Record<string, ThemeVariableUpsertRequest>);
+      setVariables(normalizeThemeVariables(payload.variables));
       notify("Variables loaded", { type: "success" });
     } catch (error) {
       const message = toErrorMessage(error);
@@ -5573,6 +5682,7 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
     setEditingKey(null);
     setKeyInput("");
     setValueType("color");
+    setValueInput("");
     setLightValue("");
     setDarkValue("");
     setDialogOpen(true);
@@ -5582,35 +5692,56 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
     setEditingKey(row.key);
     setKeyInput(row.key);
     setValueType(row.value.valueType);
-    setLightValue(row.value.lightValue);
-    setDarkValue(row.value.darkValue);
+    if (isColorThemeVariable(row.value.valueType)) {
+      setValueInput("");
+      setLightValue(normalizeThemeVariableText(row.value.lightValue));
+      setDarkValue(normalizeThemeVariableText(row.value.darkValue));
+    } else {
+      setValueInput(normalizeThemeVariableText(row.value.value));
+      setLightValue("");
+      setDarkValue("");
+    }
     setDialogOpen(true);
   };
 
   const saveVariable = async () => {
     const normalizedKey = keyInput.trim();
-    const normalizedLight = lightValue.trim();
-    const normalizedDark = darkValue.trim();
-
-    if (
-      normalizedKey.length === 0 ||
-      normalizedLight.length === 0 ||
-      normalizedDark.length === 0
-    ) {
-      notify("Variable key, light value, and dark value are required.", {
-        type: "warning",
-      });
+    if (normalizedKey.length === 0) {
+      notify("Variable key is required.", { type: "warning" });
       return;
+    }
+
+    let variablePayload: ThemeVariableUpsertRequest;
+    if (isColorThemeVariable(valueType)) {
+      const normalizedLight = lightValue.trim();
+      const normalizedDark = darkValue.trim();
+      if (normalizedLight.length === 0 || normalizedDark.length === 0) {
+        notify("Color variables require both light and dark values.", {
+          type: "warning",
+        });
+        return;
+      }
+      variablePayload = {
+        valueType,
+        lightValue: normalizedLight,
+        darkValue: normalizedDark,
+      };
+    } else {
+      const normalizedValue = valueInput.trim();
+      if (normalizedValue.length === 0) {
+        notify("Non-color variables require a value.", { type: "warning" });
+        return;
+      }
+      variablePayload = {
+        valueType,
+        value: normalizedValue,
+      };
     }
 
     setBusy(true);
     setErrorMessage(null);
     try {
-      await scopedApiAdapter.upsertThemeVariable(resourceId, normalizedKey, {
-        valueType,
-        lightValue: normalizedLight,
-        darkValue: normalizedDark,
-      });
+      await scopedApiAdapter.upsertThemeVariable(resourceId, normalizedKey, variablePayload);
 
       if (editingKey && editingKey !== normalizedKey) {
         await scopedApiAdapter.deleteThemeVariable(resourceId, editingKey);
@@ -5656,7 +5787,8 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
       <CardContent>
         <Stack spacing={2}>
           <Typography variant="body2" color="text.secondary">
-            Manage variables with a table and dialog form.
+            <code>color</code> variables use light/dark values. Other variable types use a
+            single value.
           </Typography>
 
           <StageVersionControls state={query} onChange={setQuery} />
@@ -5689,6 +5821,7 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                 <TableRow>
                   <TableCell>Key</TableCell>
                   <TableCell>Type</TableCell>
+                  <TableCell>Value</TableCell>
                   <TableCell>Light</TableCell>
                   <TableCell>Dark</TableCell>
                   <TableCell align="right">Actions</TableCell>
@@ -5697,10 +5830,23 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
               <TableBody>
                 {rows.map((row) => (
                   <TableRow key={row.key}>
-                    <TableCell>{row.key}</TableCell>
-                    <TableCell>{row.value.valueType}</TableCell>
-                    <TableCell>{row.value.lightValue}</TableCell>
-                    <TableCell>{row.value.darkValue}</TableCell>
+                    {isColorThemeVariable(row.value.valueType) ? (
+                      <>
+                        <TableCell>{row.key}</TableCell>
+                        <TableCell>{row.value.valueType}</TableCell>
+                        <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                        <TableCell>{themeVariableDisplayValue(row.value.lightValue)}</TableCell>
+                        <TableCell>{themeVariableDisplayValue(row.value.darkValue)}</TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell>{row.key}</TableCell>
+                        <TableCell>{row.value.valueType}</TableCell>
+                        <TableCell>{themeVariableDisplayValue(row.value.value)}</TableCell>
+                        <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                        <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                      </>
+                    )}
                     <TableCell align="right">
                       <Tooltip title="Edit">
                         <IconButton size="small" onClick={() => openEdit(row)}>
@@ -5743,11 +5889,16 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                 select
                 label="Value Type"
                 value={valueType}
-                onChange={(event) =>
-                  setValueType(
-                    event.target.value as ThemeVariableUpsertRequest["valueType"],
-                  )
-                }
+                onChange={(event) => {
+                  const nextType = event.target.value as ThemeVariableUpsertRequest["valueType"];
+                  setValueType(nextType);
+                  if (isColorThemeVariable(nextType)) {
+                    setValueInput("");
+                  } else {
+                    setLightValue("");
+                    setDarkValue("");
+                  }
+                }}
                 fullWidth
               >
                 {variableTypeOptions.map((option) => (
@@ -5756,18 +5907,29 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                   </MenuItem>
                 ))}
               </TextField>
-              <TextField
-                label="Light Value"
-                value={lightValue}
-                onChange={(event) => setLightValue(event.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Dark Value"
-                value={darkValue}
-                onChange={(event) => setDarkValue(event.target.value)}
-                fullWidth
-              />
+              {isColorDialogType ? (
+                <>
+                  <TextField
+                    label="Light Value"
+                    value={lightValue}
+                    onChange={(event) => setLightValue(event.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Dark Value"
+                    value={darkValue}
+                    onChange={(event) => setDarkValue(event.target.value)}
+                    fullWidth
+                  />
+                </>
+              ) : (
+                <TextField
+                  label="Value"
+                  value={valueInput}
+                  onChange={(event) => setValueInput(event.target.value)}
+                  fullWidth
+                />
+              )}
             </Stack>
           </DialogContent>
           <DialogActions>
