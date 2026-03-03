@@ -1,16 +1,16 @@
-import { Admin, Resource } from "react-admin";
+import { GraphSettingsAppWidget, GraphSettingsWidget, type GraphSettingsWidgetKey } from "./widgets";
 
-import { dataProvider } from "./dataProvider";
-import { scopedResourceViews } from "./resources/resourceViews";
+interface AppProps {
+  readonly widget?: GraphSettingsWidgetKey;
+}
 
-function App() {
-  return (
-    <Admin dataProvider={dataProvider} title="GraphSettings Admin">
-      {scopedResourceViews.map((resourceView) => (
-        <Resource key={resourceView.name} {...resourceView} />
-      ))}
-    </Admin>
-  );
+function App({ widget }: AppProps) {
+  const resolvedWidget = widget;
+  if (!resolvedWidget || resolvedWidget === "all") {
+    return <GraphSettingsAppWidget />;
+  }
+
+  return <GraphSettingsWidget widget={resolvedWidget} />;
 }
 
 export default App;
