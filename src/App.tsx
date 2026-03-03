@@ -6,8 +6,8 @@ interface AppProps {
 
 function App({ widget }: AppProps) {
   const resolvedWidget = widget;
-  if (!resolvedWidget || resolvedWidget === "all") {
-    return <GraphSettingsAppWidget />;
+  if (!resolvedWidget) {
+    return <GraphSettingsAppWidget chrome="full" />;
   }
 
   return <GraphSettingsWidget widget={resolvedWidget} />;

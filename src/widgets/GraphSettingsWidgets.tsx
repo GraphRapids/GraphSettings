@@ -19,12 +19,14 @@ const widgetStores: Record<
 
 export function GraphSettingsWidget({
   widget,
+  chrome = "embedded",
   ...shellProps
 }: GraphSettingsWidgetProps & { readonly widget: GraphSettingsWidgetKey }) {
   return (
     <GraphSettingsAdminShell
       resources={widgetResourceViews[widget]}
       store={widgetStores[widget]}
+      chrome={chrome}
       {...shellProps}
     />
   );
