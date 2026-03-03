@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { memoryStore } from "react-admin";
+import { useLayoutEffect, type ReactNode } from "react";
 
 import { createMockGraphSettingsDataProvider } from "../storybook/mockDataProvider";
 import {
@@ -32,58 +33,84 @@ function makeStore() {
   return memoryStore();
 }
 
+function StoryRouteReset({
+  hash,
+  children,
+}: {
+  readonly hash: string;
+  readonly children: ReactNode;
+}) {
+  useLayoutEffect(() => {
+    window.location.hash = hash;
+  }, [hash]);
+
+  return <>{children}</>;
+}
+
 export const FullApp: Story = {
   render: () => (
-    <GraphSettingsAppWidget
-      title="GraphSettings Suite"
-      dataProvider={makeDataProvider()}
-      store={makeStore()}
-    />
+    <StoryRouteReset hash="#/icon-sets">
+      <GraphSettingsAppWidget
+        title="GraphSettings Suite"
+        dataProvider={makeDataProvider()}
+        store={makeStore()}
+      />
+    </StoryRouteReset>
   ),
 };
 
 export const IconSets: Story = {
   render: () => (
-    <IconSetWidget
-      title="Icon Sets Widget"
-      dataProvider={makeDataProvider()}
-      store={makeStore()}
-    />
+    <StoryRouteReset hash="#/icon-sets">
+      <IconSetWidget
+        title="Icon Sets Widget"
+        dataProvider={makeDataProvider()}
+        store={makeStore()}
+      />
+    </StoryRouteReset>
   ),
 };
 
 export const LayoutSets: Story = {
   render: () => (
-    <LayoutSetWidget
-      title="Layout Sets Widget"
-      dataProvider={makeDataProvider()}
-      store={makeStore()}
-    />
+    <StoryRouteReset hash="#/layout-sets">
+      <LayoutSetWidget
+        title="Layout Sets Widget"
+        dataProvider={makeDataProvider()}
+        store={makeStore()}
+      />
+    </StoryRouteReset>
   ),
 };
 
 export const LinkSets: Story = {
   render: () => (
-    <LinkSetWidget
-      title="Link Sets Widget"
-      dataProvider={makeDataProvider()}
-      store={makeStore()}
-    />
+    <StoryRouteReset hash="#/link-sets">
+      <LinkSetWidget
+        title="Link Sets Widget"
+        dataProvider={makeDataProvider()}
+        store={makeStore()}
+      />
+    </StoryRouteReset>
   ),
 };
 
 export const GraphTypes: Story = {
   render: () => (
-    <GraphTypeWidget
-      title="Graph Types Widget"
-      dataProvider={makeDataProvider()}
-      store={makeStore()}
-    />
+    <StoryRouteReset hash="#/graph-types">
+      <GraphTypeWidget
+        title="Graph Types Widget"
+        dataProvider={makeDataProvider()}
+        store={makeStore()}
+      />
+    </StoryRouteReset>
   ),
 };
 
 export const Themes: Story = {
   render: () => (
-    <ThemeWidget title="Themes Widget" dataProvider={makeDataProvider()} store={makeStore()} />
+    <StoryRouteReset hash="#/themes">
+      <ThemeWidget title="Themes Widget" dataProvider={makeDataProvider()} store={makeStore()} />
+    </StoryRouteReset>
   ),
 };
