@@ -9,6 +9,34 @@ function fulfillJson(route: Route, payload: unknown) {
 }
 
 export async function mockGraphApi(page: Page) {
+  const themeDraftBundle = {
+    schemaVersion: "v1",
+    themeId: "theme-default",
+    themeVersion: 7,
+    name: "Default Theme",
+    cssBody: ".node { color: #222; }\n.edge { stroke: #999; }",
+    renderCss: ".node{color:#222}.edge{stroke:#999}",
+    updatedAt: "2026-03-03T10:00:00Z",
+    checksum: "theme-draft-checksum",
+    variables: {
+      "color.primary": {
+        valueType: "color",
+        lightValue: "#0057D9",
+        darkValue: "#76A9FF",
+      },
+      "font.size.body": {
+        valueType: "length",
+        value: "14px",
+      },
+    },
+  } as const;
+  const themePublishedBundle = {
+    ...themeDraftBundle,
+    themeVersion: 6,
+    checksum: "theme-published-checksum",
+    updatedAt: "2026-03-02T09:00:00Z",
+  } as const;
+
   await page.route("**/v1/**", (route) => {
     const request = route.request();
     if (request.method() === "OPTIONS") {
@@ -81,17 +109,63 @@ export async function mockGraphApi(page: Page) {
     }),
   );
 
-  await page.route("**/v1/themes*", (route) =>
-    fulfillJson(route, {
-      themes: [
-        {
+  await page.route("**/v1/themes**", (route) =>
+    (() => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const path = url.pathname.replace(/\/+$/, "") || "/";
+
+      if (request.method() === "GET" && path === "/v1/themes") {
+        return fulfillJson(route, {
+          themes: [
+            {
+              schemaVersion: "v1",
+              themeId: "theme-default",
+              name: "Default Theme",
+              draftVersion: 7,
+              publishedVersion: 6,
+              updatedAt: "2026-03-03T10:00:00Z",
+              checksum: "theme-summary-checksum",
+            },
+          ],
+        });
+      }
+
+      if (request.method() === "GET" && /^\/v1\/themes\/[^/]+$/.test(path)) {
+        return fulfillJson(route, {
+          schemaVersion: "v1",
           themeId: "theme-default",
-          name: "Default Theme",
-          draftVersion: 7,
-          publishedVersion: 6,
-          updatedAt: "2026-03-03T10:00:00Z",
-        },
-      ],
-    }),
+          draft: themeDraftBundle,
+          publishedVersions: [themePublishedBundle],
+        });
+      }
+
+      if (request.method() === "GET" && /^\/v1\/themes\/[^/]+\/bundle$/.test(path)) {
+        const stage = url.searchParams.get("stage");
+        return fulfillJson(route, stage === "published" ? themePublishedBundle : themeDraftBundle);
+      }
+
+      if (request.method() === "PUT" && /^\/v1\/themes\/[^/]+$/.test(path)) {
+        return fulfillJson(route, {
+          schemaVersion: "v1",
+          themeId: "theme-default",
+          draft: {
+            ...themeDraftBundle,
+            ...JSON.parse(request.postData() ?? "{}"),
+          },
+          publishedVersions: [themePublishedBundle],
+        });
+      }
+
+      if (request.method() === "POST" && /^\/v1\/themes\/[^/]+\/publish$/.test(path)) {
+        return fulfillJson(route, {
+          ...themeDraftBundle,
+          themeVersion: 8,
+          checksum: "theme-published-checksum-v8",
+        });
+      }
+
+      return route.fallback();
+    })(),
   );
 }

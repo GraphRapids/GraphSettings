@@ -1,6 +1,17 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { mockGraphApi } from "./mockGraphApi";
+
+async function assertSectionOrder(page: Page, firstTestId: string, secondTestId: string) {
+  const firstTop = await page
+    .getByTestId(firstTestId)
+    .evaluate((node) => (node as HTMLElement).getBoundingClientRect().top);
+  const secondTop = await page
+    .getByTestId(secondTestId)
+    .evaluate((node) => (node as HTMLElement).getBoundingClientRect().top);
+
+  expect(firstTop).toBeLessThan(secondTop);
+}
 
 test.describe("GraphSettings widgets", () => {
   test("all widget mode is chrome-free and supports route-based navigation", async ({
@@ -65,4 +76,41 @@ test.describe("GraphSettings widgets", () => {
       await expect(page.getByRole("cell", { name: testCase.sampleValue })).toBeVisible();
     });
   }
+
+  test("theme pages show variables first and Monaco CSS editors", async ({ page }) => {
+    await mockGraphApi(page);
+
+    await page.goto("/?widget=themes#/themes");
+    await page.getByRole("link", { name: "Show" }).click();
+    await expect(page.getByText("Published Theme", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByTestId("theme-published-css-editor").locator(".monaco-editor"),
+    ).toBeVisible();
+    await assertSectionOrder(
+      page,
+      "theme-published-variables-section",
+      "theme-published-css-section",
+    );
+    await expect(page.getByRole("button", { name: "See Raw" })).toBeVisible();
+
+    await page.goto("/?widget=themes#/themes");
+    await page.getByRole("link", { name: "Edit" }).click();
+    await expect(page.getByText("Draft Theme Editor", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByTestId("theme-draft-css-editor").locator(".monaco-editor"),
+    ).toBeVisible();
+    await assertSectionOrder(page, "theme-draft-variables-section", "theme-draft-css-section");
+
+    await page.goto("/?widget=themes#/themes");
+    await page.getByRole("link", { name: "Create" }).click();
+    await expect(page.getByText("Create Theme", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByTestId("theme-create-css-editor").locator(".monaco-editor"),
+    ).toBeVisible();
+    await assertSectionOrder(
+      page,
+      "theme-create-variables-section",
+      "theme-create-css-section",
+    );
+  });
 });

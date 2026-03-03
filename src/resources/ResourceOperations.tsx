@@ -73,6 +73,7 @@ import type {
   ThemeVariableUpsertRequest,
 } from "../api/scopedTypes";
 import { RawJsonToggle } from "../components/RawJsonToggle";
+import { CssMonacoEditor } from "../components/CssMonacoEditor";
 import type { ScopedResourceName } from "./scopedResources";
 
 type ResourceIdField =
@@ -477,127 +478,6 @@ function renderLayoutTableValue(value: unknown): ReactNode {
   }
 
   return formatValue(value);
-}
-
-function prettyFormatCss(cssBody: string): string {
-  const normalized = cssBody.replace(/\r\n?/g, "\n").trim();
-  if (normalized.length === 0) {
-    return "";
-  }
-
-  const output: string[] = [];
-  let current = "";
-  let indent = 0;
-  let quote: '"' | "'" | null = null;
-  let escaped = false;
-  let commentDepth = 0;
-  let parenDepth = 0;
-
-  const pushLine = (line: string) => {
-    const trimmed = line.trim();
-    if (trimmed.length === 0) {
-      return;
-    }
-    output.push(`${"  ".repeat(indent)}${trimmed}`);
-  };
-
-  for (let index = 0; index < normalized.length; index += 1) {
-    const character = normalized[index];
-    const next = normalized[index + 1];
-
-    if (commentDepth > 0) {
-      current += character;
-      if (character === "*" && next === "/") {
-        current += "/";
-        index += 1;
-        commentDepth -= 1;
-      }
-      continue;
-    }
-
-    if (quote) {
-      current += character;
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (character === "\\") {
-        escaped = true;
-        continue;
-      }
-      if (character === quote) {
-        quote = null;
-      }
-      continue;
-    }
-
-    if (character === "/" && next === "*") {
-      current += "/*";
-      commentDepth += 1;
-      index += 1;
-      continue;
-    }
-
-    if (character === "'" || character === '"') {
-      quote = character;
-      current += character;
-      continue;
-    }
-
-    if (character === "(") {
-      parenDepth += 1;
-      current += character;
-      continue;
-    }
-    if (character === ")" && parenDepth > 0) {
-      parenDepth -= 1;
-      current += character;
-      continue;
-    }
-
-    if (character === "{") {
-      pushLine(`${current} {`);
-      current = "";
-      indent += 1;
-      continue;
-    }
-
-    if (character === "}") {
-      pushLine(current);
-      current = "";
-      indent = Math.max(0, indent - 1);
-      pushLine("}");
-      continue;
-    }
-
-    if (character === ";" && parenDepth === 0) {
-      current += ";";
-      pushLine(current);
-      current = "";
-      continue;
-    }
-
-    if (character === "\n" || character === "\r" || character === "\t") {
-      if (current.length > 0 && !/\s$/.test(current)) {
-        current += " ";
-      }
-      continue;
-    }
-
-    current += character;
-  }
-
-  pushLine(current);
-
-  return output
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-function formatCssForRaw(value: unknown): string {
-  const cssBody = typeof value === "string" ? value : String(value ?? "");
-  return prettyFormatCss(cssBody);
 }
 
 function kindFromLayoutValue(value: unknown): LayoutValueKind {
@@ -3692,13 +3572,36 @@ export function ThemeCreateEditor() {
   const [name, setName] = useState("");
   const [sourceThemeId, setSourceThemeId] = useState("");
   const [sourceVersion, setSourceVersion] = useState("");
+  const [draftCssBody, setDraftCssBody] = useState(DUMMY_THEME_CSS_BODY);
+  const [variables, setVariables] = useState<Record<string, ThemeVariableUpsertRequest>>(
+    {},
+  );
 
   const [sourceOptions, setSourceOptions] = useState<ThemeSummary[]>([]);
   const [versionOptions, setVersionOptions] = useState<VersionCountOption[]>([]);
   const [busy, setBusy] = useState(false);
   const [loadingSources, setLoadingSources] = useState(false);
   const [loadingVersions, setLoadingVersions] = useState(false);
+  const [loadingSourceBundle, setLoadingSourceBundle] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [keyInput, setKeyInput] = useState("");
+  const [valueType, setValueType] =
+    useState<ThemeVariableUpsertRequest["valueType"]>("color");
+  const [valueInput, setValueInput] = useState("");
+  const [lightValue, setLightValue] = useState("");
+  const [darkValue, setDarkValue] = useState("");
+
+  const rows = useMemo(
+    () =>
+      Object.entries(variables)
+        .map(([key, value]) => ({ key, value }))
+        .sort((left, right) => left.key.localeCompare(right.key)),
+    [variables],
+  );
+  const isColorDialogType = isColorThemeVariable(valueType);
 
   const loadSourceOptions = useCallback(async () => {
     setLoadingSources(true);
@@ -3758,6 +3661,122 @@ export function ThemeCreateEditor() {
     void loadSourceVersions();
   }, [loadSourceVersions]);
 
+  const loadSourceBundle = useCallback(async () => {
+    if (!sourceThemeId) {
+      setDraftCssBody(DUMMY_THEME_CSS_BODY);
+      setVariables({});
+      return;
+    }
+
+    const parsedVersion = Number(sourceVersion);
+    if (!Number.isInteger(parsedVersion) || parsedVersion < 1) {
+      return;
+    }
+
+    setLoadingSourceBundle(true);
+    setErrorMessage(null);
+    try {
+      const sourceBundle = (await scopedApiAdapter.getBundle("themes", sourceThemeId, {
+        stage: "published",
+        version: parsedVersion,
+      })) as ThemeBundle;
+      setDraftCssBody(sourceBundle.cssBody);
+      setVariables(normalizeThemeVariables(sourceBundle.variables));
+    } catch (error) {
+      const message = toErrorMessage(error);
+      setErrorMessage(message);
+      notify(message, { type: "error" });
+    } finally {
+      setLoadingSourceBundle(false);
+    }
+  }, [notify, sourceThemeId, sourceVersion]);
+
+  useEffect(() => {
+    void loadSourceBundle();
+  }, [loadSourceBundle]);
+
+  const openCreate = () => {
+    setEditingKey(null);
+    setKeyInput("");
+    setValueType("color");
+    setValueInput("");
+    setLightValue("");
+    setDarkValue("");
+    setDialogOpen(true);
+  };
+
+  const openEdit = (row: { key: string; value: ThemeVariableUpsertRequest }) => {
+    setEditingKey(row.key);
+    setKeyInput(row.key);
+    setValueType(row.value.valueType);
+    if (isColorThemeVariable(row.value.valueType)) {
+      setValueInput("");
+      setLightValue(normalizeThemeVariableText(row.value.lightValue));
+      setDarkValue(normalizeThemeVariableText(row.value.darkValue));
+    } else {
+      setValueInput(normalizeThemeVariableText(row.value.value));
+      setLightValue("");
+      setDarkValue("");
+    }
+    setDialogOpen(true);
+  };
+
+  const saveVariableLocal = () => {
+    const normalizedKey = keyInput.trim();
+    if (normalizedKey.length === 0) {
+      notify("Variable key is required.", { type: "warning" });
+      return;
+    }
+
+    let variablePayload: ThemeVariableUpsertRequest;
+    if (isColorThemeVariable(valueType)) {
+      const normalizedLight = lightValue.trim();
+      const normalizedDark = darkValue.trim();
+      if (normalizedLight.length === 0 || normalizedDark.length === 0) {
+        notify("Color variables require both light and dark values.", {
+          type: "warning",
+        });
+        return;
+      }
+      variablePayload = {
+        valueType,
+        lightValue: normalizedLight,
+        darkValue: normalizedDark,
+      };
+    } else {
+      const normalizedValue = valueInput.trim();
+      if (normalizedValue.length === 0) {
+        notify("Non-color variables require a value.", { type: "warning" });
+        return;
+      }
+      variablePayload = {
+        valueType,
+        value: normalizedValue,
+      };
+    }
+
+    setVariables((current) => {
+      const next = { ...current };
+      if (editingKey && editingKey !== normalizedKey) {
+        delete next[editingKey];
+      }
+      next[normalizedKey] = variablePayload;
+      return next;
+    });
+    setDialogOpen(false);
+  };
+
+  const deleteVariableLocal = (variableKey: string) => {
+    if (!window.confirm(`Delete variable '${variableKey}' before create?`)) {
+      return;
+    }
+    setVariables((current) => {
+      const next = { ...current };
+      delete next[variableKey];
+      return next;
+    });
+  };
+
   const handleCreate = async () => {
     const normalizedId = themeId.trim();
     const normalizedName = name.trim();
@@ -3770,33 +3789,28 @@ export function ThemeCreateEditor() {
       notify("Name is required.", { type: "warning" });
       return;
     }
+    if (draftCssBody.trim().length === 0) {
+      notify("cssBody is required.", { type: "warning" });
+      return;
+    }
 
     setBusy(true);
     setErrorMessage(null);
     try {
-      let cssBody = DUMMY_THEME_CSS_BODY;
-      let variables: Record<string, ThemeVariableUpsertRequest> = {};
-      let createMode = "with placeholder cssBody";
-
-      if (sourceThemeId) {
-        const parsedVersion = Number(sourceVersion);
-        if (!Number.isInteger(parsedVersion) || parsedVersion < 1) {
-          throw new Error("Select a published source version.");
-        }
-
-        const sourceBundle = (await scopedApiAdapter.getBundle("themes", sourceThemeId, {
-          stage: "published",
-          version: parsedVersion,
-        })) as ThemeBundle;
-        cssBody = sourceBundle.cssBody;
-        variables = normalizeThemeVariables(sourceBundle.variables);
-        createMode = `from ${sourceThemeId} v${parsedVersion}`;
+      let createMode = "with custom cssBody and variables";
+      const parsedVersion = Number(sourceVersion);
+      if (
+        sourceThemeId &&
+        Number.isInteger(parsedVersion) &&
+        parsedVersion >= 1
+      ) {
+        createMode = `using ${sourceThemeId} v${parsedVersion} as base`;
       }
 
       const payload: ThemeCreateRequest = {
         themeId: normalizedId,
         name: normalizedName,
-        cssBody,
+        cssBody: draftCssBody,
         variables,
       };
       const created = (await scopedApiAdapter.create("themes", payload)) as ThemeRecord;
@@ -3820,8 +3834,8 @@ export function ThemeCreateEditor() {
       <CardContent>
         <Stack spacing={2}>
           <Alert severity="info">
-            No JSON needed. Optionally copy from a published theme version; otherwise a
-            placeholder cssBody is added automatically.
+            Variables are editable first. The CSS editor is below with Monaco CSS
+            autocomplete/suggestions.
           </Alert>
           <TextField
             label="Theme ID"
@@ -3845,10 +3859,10 @@ export function ThemeCreateEditor() {
             value={sourceThemeId}
             onChange={(event) => setSourceThemeId(event.target.value)}
             size="small"
-            disabled={loadingSources}
-            helperText="Optional: copy cssBody and variables from a published theme."
+            disabled={busy || loadingSources}
+            helperText="Optional: load variables and cssBody from a published theme."
           >
-            <MenuItem value="">No source (use placeholder cssBody)</MenuItem>
+            <MenuItem value="">No source (start from local defaults)</MenuItem>
             {sourceOptions.map((option) => (
               <MenuItem key={option.themeId} value={option.themeId}>
                 {option.themeId} ({option.name})
@@ -3861,10 +3875,12 @@ export function ThemeCreateEditor() {
             value={sourceVersion}
             onChange={(event) => setSourceVersion(event.target.value)}
             size="small"
-            disabled={!sourceThemeId || loadingVersions || versionOptions.length === 0}
+            disabled={
+              busy || !sourceThemeId || loadingVersions || versionOptions.length === 0
+            }
             helperText={
               sourceThemeId
-                ? "Choose which published version to copy."
+                ? "Choose which published version to load."
                 : "Select a source theme first."
             }
           >
@@ -3875,10 +3891,105 @@ export function ThemeCreateEditor() {
             ))}
           </TextField>
 
+          {loadingSourceBundle ? (
+            <Typography variant="body2" color="text.secondary">
+              Loading source bundle...
+            </Typography>
+          ) : null}
+
           <PanelError message={errorMessage} />
 
+          <Stack spacing={1} data-testid="theme-create-variables-section">
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+                Variables
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={openCreate}
+                disabled={busy || loadingSourceBundle}
+                startIcon={<AddIcon />}
+              >
+                Add Variable
+              </Button>
+            </Stack>
+            {rows.length === 0 ? (
+              <EmptyMessage text="No variables set yet." />
+            ) : (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Key</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Value</TableCell>
+                    <TableCell>Light</TableCell>
+                    <TableCell>Dark</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow key={row.key}>
+                      {isColorThemeVariable(row.value.valueType) ? (
+                        <>
+                          <TableCell>{row.key}</TableCell>
+                          <TableCell>{row.value.valueType}</TableCell>
+                          <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                          <TableCell>
+                            {themeVariableDisplayValue(row.value.lightValue)}
+                          </TableCell>
+                          <TableCell>
+                            {themeVariableDisplayValue(row.value.darkValue)}
+                          </TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>{row.key}</TableCell>
+                          <TableCell>{row.value.valueType}</TableCell>
+                          <TableCell>{themeVariableDisplayValue(row.value.value)}</TableCell>
+                          <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                          <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                        </>
+                      )}
+                      <TableCell align="right">
+                        <Tooltip title="Edit">
+                          <IconButton size="small" onClick={() => openEdit(row)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => deleteVariableLocal(row.key)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Stack>
+
+          <Box data-testid="theme-create-css-section">
+            <CssMonacoEditor
+              label="CSS Body"
+              value={draftCssBody}
+              onChange={setDraftCssBody}
+              minHeight={960}
+              testId="theme-create-css-editor"
+            />
+          </Box>
+
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-            <Button variant="contained" onClick={handleCreate} disabled={busy}>
+            <Button
+              variant="contained"
+              onClick={handleCreate}
+              disabled={busy || loadingSourceBundle}
+            >
               Create Theme
             </Button>
             <Button
@@ -3889,14 +4000,86 @@ export function ThemeCreateEditor() {
                 setSourceThemeId("");
                 setSourceVersion("");
                 setVersionOptions([]);
+                setDraftCssBody(DUMMY_THEME_CSS_BODY);
+                setVariables({});
                 setErrorMessage(null);
               }}
-              disabled={busy}
+              disabled={busy || loadingSourceBundle}
             >
               Clear
             </Button>
           </Stack>
         </Stack>
+
+        <Dialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle>{editingKey ? "Edit Variable" : "Add Variable"}</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField
+                label="Variable Key"
+                value={keyInput}
+                onChange={(event) => setKeyInput(event.target.value)}
+                fullWidth
+              />
+              <TextField
+                select
+                label="Value Type"
+                value={valueType}
+                onChange={(event) => {
+                  const nextType = event.target.value as ThemeVariableUpsertRequest["valueType"];
+                  setValueType(nextType);
+                  if (isColorThemeVariable(nextType)) {
+                    setValueInput("");
+                  } else {
+                    setLightValue("");
+                    setDarkValue("");
+                  }
+                }}
+                fullWidth
+              >
+                {variableTypeOptions.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </TextField>
+              {isColorDialogType ? (
+                <>
+                  <TextField
+                    label="Light Value"
+                    value={lightValue}
+                    onChange={(event) => setLightValue(event.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Dark Value"
+                    value={darkValue}
+                    onChange={(event) => setDarkValue(event.target.value)}
+                    fullWidth
+                  />
+                </>
+              ) : (
+                <TextField
+                  label="Value"
+                  value={valueInput}
+                  onChange={(event) => setValueInput(event.target.value)}
+                  fullWidth
+                />
+              )}
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveVariableLocal} variant="contained">
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
     </Card>
   );
@@ -3988,56 +4171,61 @@ export function ThemePublishedView() {
                 </Typography>
               </Stack>
 
-              <Typography variant="subtitle2">CSS Body</Typography>
-              <RawJsonToggle
-                value={bundle.cssBody}
-                collapsedByDefault
-                summary="Theme cssBody"
-                formatForRaw={formatCssForRaw}
-              />
-
-              {variableRows.length === 0 ? (
-                <EmptyMessage text="Published version contains no variables." />
-              ) : (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Key</TableCell>
-                      <TableCell>Type</TableCell>
-                      <TableCell>Value</TableCell>
-                      <TableCell>Light</TableCell>
-                      <TableCell>Dark</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {variableRows.map((row) => (
-                      <TableRow key={row.key}>
-                        {isColorThemeVariable(row.value.valueType) ? (
-                          <>
-                            <TableCell>{row.key}</TableCell>
-                            <TableCell>{row.value.valueType}</TableCell>
-                            <TableCell>{themeVariableEmptyDisplay}</TableCell>
-                            <TableCell>
-                              {themeVariableDisplayValue(row.value.lightValue)}
-                            </TableCell>
-                            <TableCell>
-                              {themeVariableDisplayValue(row.value.darkValue)}
-                            </TableCell>
-                          </>
-                        ) : (
-                          <>
-                            <TableCell>{row.key}</TableCell>
-                            <TableCell>{row.value.valueType}</TableCell>
-                            <TableCell>{themeVariableDisplayValue(row.value.value)}</TableCell>
-                            <TableCell>{themeVariableEmptyDisplay}</TableCell>
-                            <TableCell>{themeVariableEmptyDisplay}</TableCell>
-                          </>
-                        )}
+              <Stack spacing={1} data-testid="theme-published-variables-section">
+                <Typography variant="subtitle2">Variables</Typography>
+                {variableRows.length === 0 ? (
+                  <EmptyMessage text="Published version contains no variables." />
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Key</TableCell>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Value</TableCell>
+                        <TableCell>Light</TableCell>
+                        <TableCell>Dark</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+                    </TableHead>
+                    <TableBody>
+                      {variableRows.map((row) => (
+                        <TableRow key={row.key}>
+                          {isColorThemeVariable(row.value.valueType) ? (
+                            <>
+                              <TableCell>{row.key}</TableCell>
+                              <TableCell>{row.value.valueType}</TableCell>
+                              <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                              <TableCell>
+                                {themeVariableDisplayValue(row.value.lightValue)}
+                              </TableCell>
+                              <TableCell>
+                                {themeVariableDisplayValue(row.value.darkValue)}
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              <TableCell>{row.key}</TableCell>
+                              <TableCell>{row.value.valueType}</TableCell>
+                              <TableCell>{themeVariableDisplayValue(row.value.value)}</TableCell>
+                              <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                              <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                            </>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </Stack>
+
+              <Box data-testid="theme-published-css-section">
+                <CssMonacoEditor
+                  label="CSS Body"
+                  value={bundle.cssBody}
+                  readOnly
+                  minHeight={960}
+                  testId="theme-published-css-editor"
+                />
+              </Box>
 
               <RawJsonToggle
                 value={bundle}
@@ -4304,26 +4492,96 @@ export function ThemeDraftEditor() {
             Edit draft theme locally, then save or publish. Draft version is set
             automatically by the API.
           </Alert>
-          <TextField
-            label="CSS Body"
-            value={draftCssBody}
-            onChange={(event) => {
-              setDraftCssBody(event.target.value);
-              setIsDirty(true);
-            }}
-            multiline
-            minRows={8}
-            fullWidth
-          />
+          <Stack spacing={1} data-testid="theme-draft-variables-section">
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+                Variables
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={openCreate}
+                disabled={busy}
+                startIcon={<AddIcon />}
+              >
+                Add Variable
+              </Button>
+            </Stack>
+
+            {rows.length === 0 ? (
+              <EmptyMessage text="No draft variables yet." />
+            ) : (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Key</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Value</TableCell>
+                    <TableCell>Light</TableCell>
+                    <TableCell>Dark</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow key={row.key}>
+                      {isColorThemeVariable(row.value.valueType) ? (
+                        <>
+                          <TableCell>{row.key}</TableCell>
+                          <TableCell>{row.value.valueType}</TableCell>
+                          <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                          <TableCell>
+                            {themeVariableDisplayValue(row.value.lightValue)}
+                          </TableCell>
+                          <TableCell>{themeVariableDisplayValue(row.value.darkValue)}</TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>{row.key}</TableCell>
+                          <TableCell>{row.value.valueType}</TableCell>
+                          <TableCell>{themeVariableDisplayValue(row.value.value)}</TableCell>
+                          <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                          <TableCell>{themeVariableEmptyDisplay}</TableCell>
+                        </>
+                      )}
+                      <TableCell align="right">
+                        <Tooltip title="Edit">
+                          <IconButton size="small" onClick={() => openEdit(row)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => deleteVariableLocal(row.key)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Stack>
+
+          <Box data-testid="theme-draft-css-section">
+            <CssMonacoEditor
+              label="CSS Body"
+              value={draftCssBody}
+              onChange={(nextValue) => {
+                setDraftCssBody(nextValue);
+                setIsDirty(true);
+              }}
+              minHeight={960}
+              testId="theme-draft-css-editor"
+            />
+          </Box>
+
+          <PanelError message={errorMessage} />
+
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-            <Button
-              variant="contained"
-              onClick={openCreate}
-              disabled={busy}
-              startIcon={<AddIcon />}
-            >
-              Add Variable
-            </Button>
             <Button
               variant="outlined"
               onClick={resetDraftChanges}
@@ -4349,64 +4607,6 @@ export function ThemeDraftEditor() {
               Publish Draft
             </Button>
           </Stack>
-
-          <PanelError message={errorMessage} />
-
-          {rows.length === 0 ? (
-            <EmptyMessage text="No draft variables yet." />
-          ) : (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Key</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Value</TableCell>
-                  <TableCell>Light</TableCell>
-                  <TableCell>Dark</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.key}>
-                    {isColorThemeVariable(row.value.valueType) ? (
-                      <>
-                        <TableCell>{row.key}</TableCell>
-                        <TableCell>{row.value.valueType}</TableCell>
-                        <TableCell>{themeVariableEmptyDisplay}</TableCell>
-                        <TableCell>{themeVariableDisplayValue(row.value.lightValue)}</TableCell>
-                        <TableCell>{themeVariableDisplayValue(row.value.darkValue)}</TableCell>
-                      </>
-                    ) : (
-                      <>
-                        <TableCell>{row.key}</TableCell>
-                        <TableCell>{row.value.valueType}</TableCell>
-                        <TableCell>{themeVariableDisplayValue(row.value.value)}</TableCell>
-                        <TableCell>{themeVariableEmptyDisplay}</TableCell>
-                        <TableCell>{themeVariableEmptyDisplay}</TableCell>
-                      </>
-                    )}
-                    <TableCell align="right">
-                      <Tooltip title="Edit">
-                        <IconButton size="small" onClick={() => openEdit(row)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => deleteVariableLocal(row.key)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
         </Stack>
 
         <Dialog
