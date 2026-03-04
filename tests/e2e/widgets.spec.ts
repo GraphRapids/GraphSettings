@@ -77,6 +77,21 @@ test.describe("GraphSettings widgets", () => {
     });
   }
 
+  test("graph-type edit pre-populates draft references", async ({ page }) => {
+    await mockGraphApi(page);
+
+    await page.goto("/?widget=graph-types#/graph-types");
+    await page.getByRole("link", { name: "Edit" }).click();
+
+    await expect(page.getByText("Draft Graph Type Editor", { exact: true }).first()).toBeVisible();
+    await expect(page.getByLabel("Name")).toHaveValue("Default Graph");
+    await expect(page.getByText("layout-default (Default Layout)")).toBeVisible();
+    await expect(page.getByText("links-default (Default Links)")).toBeVisible();
+    await expect(page.getByText("icons-default (Default Icons)")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Version v3" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Version v2" })).toBeVisible();
+  });
+
   test("theme pages show variables first and Monaco CSS editors", async ({ page }) => {
     await mockGraphApi(page);
 

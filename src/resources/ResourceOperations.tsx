@@ -8075,17 +8075,10 @@ export function GraphTypeDraftEditor() {
     if (appliedDraftSignatureRef.current === draftSignature) {
       return;
     }
+    applyDraftSnapshot(record, true);
     appliedDraftSignatureRef.current = draftSignature;
-
-    const timeoutId = window.setTimeout(() => {
-      applyDraftSnapshot(record, true);
-      setIsDirty(false);
-      setErrorMessage(null);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
+    setIsDirty(false);
+    setErrorMessage(null);
   }, [applyDraftSnapshot, draftSignature, hasDraftData, record]);
 
   const updateLayoutSet = (targetLayoutSetId: string) => {

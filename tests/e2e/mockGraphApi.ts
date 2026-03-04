@@ -73,6 +73,77 @@ export async function mockGraphApi(page: Page) {
     updatedAt: "2026-03-02T09:00:00Z",
     checksum: "layout-published-checksum",
   } as const;
+  const linkSetDraftBundle = {
+    schemaVersion: "v1",
+    linkSetId: "links-default",
+    linkSetVersion: 2,
+    name: "Default Links",
+    entries: {
+      reports_to: {
+        label: "Reports To",
+        elkProperties: {
+          "graphrapids.edge.marker_start": "NONE",
+          "graphrapids.edge.style": "SOLID",
+          "graphrapids.edge.marker_end": "OPEN_ARROW",
+          "org.eclipse.elk.edge.thickness": 1,
+        },
+      },
+    },
+    updatedAt: "2026-03-03T10:00:00Z",
+    checksum: "linkset-draft-checksum",
+  } as const;
+  const linkSetPublishedBundle = {
+    ...linkSetDraftBundle,
+    linkSetVersion: 2,
+    updatedAt: "2026-03-02T09:00:00Z",
+    checksum: "linkset-published-checksum",
+  } as const;
+  const graphTypeDraftBundle = {
+    schemaVersion: "v1",
+    graphTypeId: "graph-default",
+    graphTypeVersion: 5,
+    name: "Default Graph",
+    layoutSetRef: {
+      layoutSetId: "layout-default",
+      layoutSetVersion: 3,
+      checksum: "layout-published-checksum",
+    },
+    iconSetRefs: [
+      {
+        iconSetId: "icons-default",
+        iconSetVersion: 2,
+        checksum: "iconset-published-checksum",
+      },
+    ],
+    linkSetRef: {
+      linkSetId: "links-default",
+      linkSetVersion: 2,
+      checksum: "linkset-published-checksum",
+    },
+    iconConflictPolicy: "reject",
+    nodeTypes: ["person", "team"],
+    linkTypes: ["reports_to"],
+    typeIconMap: {
+      person: "mdi:account",
+      team: "mdi:account-group",
+    },
+    edgeTypeOverrides: {},
+    iconSetResolutionChecksum: "graph-icon-resolution-checksum",
+    runtimeChecksum: "graph-runtime-checksum",
+    elkSettings: {
+      sectionA: {
+        values: [],
+      },
+    },
+    updatedAt: "2026-03-03T10:00:00Z",
+    checksum: "graph-draft-checksum",
+  } as const;
+  const graphTypePublishedBundle = {
+    ...graphTypeDraftBundle,
+    graphTypeVersion: 4,
+    updatedAt: "2026-03-02T09:00:00Z",
+    checksum: "graph-published-checksum",
+  } as const;
   const edgePropertyCatalog = {
     schemaVersion: "v1",
     checksum: "edge-property-catalog-checksum",
@@ -275,32 +346,132 @@ export async function mockGraphApi(page: Page) {
     })(),
   );
 
-  await page.route("**/v1/link-sets*", (route) =>
-    fulfillJson(route, {
-      linkSets: [
-        {
+  await page.route("**/v1/link-sets**", (route) =>
+    (() => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const path = url.pathname.replace(/\/+$/, "") || "/";
+
+      if (request.method() === "GET" && path === "/v1/link-sets") {
+        return fulfillJson(route, {
+          linkSets: [
+            {
+              schemaVersion: "v1",
+              linkSetId: "links-default",
+              name: "Default Links",
+              draftVersion: 2,
+              publishedVersion: 2,
+              updatedAt: "2026-03-03T10:00:00Z",
+              checksum: "linkset-summary-checksum",
+            },
+          ],
+        });
+      }
+
+      if (request.method() === "GET" && /^\/v1\/link-sets\/[^/]+$/.test(path)) {
+        return fulfillJson(route, {
+          schemaVersion: "v1",
           linkSetId: "links-default",
-          name: "Default Links",
-          draftVersion: 2,
-          publishedVersion: 2,
-          updatedAt: "2026-03-03T10:00:00Z",
-        },
-      ],
-    }),
+          draft: linkSetDraftBundle,
+          publishedVersions: [linkSetPublishedBundle],
+        });
+      }
+
+      if (request.method() === "GET" && /^\/v1\/link-sets\/[^/]+\/bundle$/.test(path)) {
+        const stage = url.searchParams.get("stage");
+        return fulfillJson(
+          route,
+          stage === "published" ? linkSetPublishedBundle : linkSetDraftBundle,
+        );
+      }
+
+      if (request.method() === "PUT" && /^\/v1\/link-sets\/[^/]+$/.test(path)) {
+        return fulfillJson(route, {
+          schemaVersion: "v1",
+          linkSetId: "links-default",
+          draft: {
+            ...linkSetDraftBundle,
+            ...JSON.parse(request.postData() ?? "{}"),
+          },
+          publishedVersions: [linkSetPublishedBundle],
+        });
+      }
+
+      if (request.method() === "POST" && /^\/v1\/link-sets\/[^/]+\/publish$/.test(path)) {
+        return fulfillJson(route, {
+          ...linkSetDraftBundle,
+          linkSetVersion: 3,
+          checksum: "linkset-published-checksum-v3",
+        });
+      }
+
+      return route.fallback();
+    })(),
   );
 
-  await page.route("**/v1/graph-types*", (route) =>
-    fulfillJson(route, {
-      graphTypes: [
-        {
+  await page.route("**/v1/graph-types**", (route) =>
+    (() => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const path = url.pathname.replace(/\/+$/, "") || "/";
+
+      if (request.method() === "GET" && path === "/v1/graph-types") {
+        return fulfillJson(route, {
+          graphTypes: [
+            {
+              schemaVersion: "v1",
+              graphTypeId: "graph-default",
+              name: "Default Graph",
+              draftVersion: 5,
+              publishedVersion: 4,
+              updatedAt: "2026-03-03T10:00:00Z",
+              checksum: "graph-type-summary-checksum",
+              runtimeChecksum: "graph-type-runtime-summary-checksum",
+              iconSetResolutionChecksum: "graph-type-icon-resolution-summary-checksum",
+            },
+          ],
+        });
+      }
+
+      if (request.method() === "GET" && /^\/v1\/graph-types\/[^/]+$/.test(path)) {
+        return fulfillJson(route, {
+          schemaVersion: "v1",
           graphTypeId: "graph-default",
-          name: "Default Graph",
-          draftVersion: 5,
-          publishedVersion: 4,
-          updatedAt: "2026-03-03T10:00:00Z",
-        },
-      ],
-    }),
+          draft: graphTypeDraftBundle,
+          publishedVersions: [graphTypePublishedBundle],
+        });
+      }
+
+      if (request.method() === "GET" && /^\/v1\/graph-types\/[^/]+\/bundle$/.test(path)) {
+        const stage = url.searchParams.get("stage");
+        return fulfillJson(
+          route,
+          stage === "published" ? graphTypePublishedBundle : graphTypeDraftBundle,
+        );
+      }
+
+      if (request.method() === "PUT" && /^\/v1\/graph-types\/[^/]+$/.test(path)) {
+        return fulfillJson(route, {
+          schemaVersion: "v1",
+          graphTypeId: "graph-default",
+          draft: {
+            ...graphTypeDraftBundle,
+            ...JSON.parse(request.postData() ?? "{}"),
+          },
+          publishedVersions: [graphTypePublishedBundle],
+        });
+      }
+
+      if (request.method() === "POST" && /^\/v1\/graph-types\/[^/]+\/publish$/.test(path)) {
+        return fulfillJson(route, {
+          ...graphTypeDraftBundle,
+          graphTypeVersion: 6,
+          checksum: "graph-published-checksum-v6",
+        });
+      }
+
+      return route.fallback();
+    })(),
   );
 
   await page.route("**/v1/themes**", (route) =>
