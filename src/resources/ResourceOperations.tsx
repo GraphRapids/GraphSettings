@@ -162,10 +162,12 @@ const themeVariableEmptyDisplay = "—";
 const linkEdgeMarkerStartPropertyKey = "graphrapids.edge.marker_start";
 const linkEdgeStylePropertyKey = "graphrapids.edge.style";
 const linkEdgeMarkerEndPropertyKey = "graphrapids.edge.marker_end";
+const linkEdgeThicknessPropertyKey = "org.eclipse.elk.edge.thickness";
 const linkEdgePropertyKeys = new Set<string>([
   linkEdgeMarkerStartPropertyKey,
   linkEdgeStylePropertyKey,
   linkEdgeMarkerEndPropertyKey,
+  linkEdgeThicknessPropertyKey,
 ]);
 const linkEdgeMarkerFallbackOptions = [
   "NONE",
@@ -182,11 +184,15 @@ const linkEdgeStyleFallbackOptions = [
   "DASH_DOT",
   "LONG_DASH_DOT",
 ];
+const linkSetKeyColumnSx = { width: "25%" };
+const linkSetLabelColumnSx = { width: "25%" };
+const linkSetPreviewColumnSx = { width: "50%", minWidth: 180 };
 
 interface LinkEdgeSelection {
   readonly markerStart: string;
   readonly edgeStyle: string;
   readonly markerEnd: string;
+  readonly thickness: number;
 }
 
 interface LinkEdgePropertyCatalog {
@@ -200,6 +206,7 @@ const defaultLinkEdgeSelection: LinkEdgeSelection = {
   markerStart: "NONE",
   edgeStyle: "SOLID",
   markerEnd: "NONE",
+  thickness: 1,
 };
 const defaultLinkEdgePropertyCatalog: LinkEdgePropertyCatalog = {
   markerStartOptions: [...linkEdgeMarkerFallbackOptions],
@@ -251,6 +258,34 @@ function resolveEdgePropertyDefinition(
   return { options, defaultValue };
 }
 
+function normalizeEdgeThicknessValue(value: unknown, fallback: number): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value.trim())
+        : Number.NaN;
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function formatThicknessValue(value: number): string {
+  if (Number.isInteger(value)) {
+    return String(value);
+  }
+  return value.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function resolveEdgeThicknessDefinition(definitions: readonly PropertyDefinition[]): number {
+  const definition = definitions.find(
+    (candidate) => candidate.key === linkEdgeThicknessPropertyKey && candidate.valueType === "number",
+  );
+  return normalizeEdgeThicknessValue(definition?.defaultValue, defaultLinkEdgeSelection.thickness);
+}
+
 function edgePropertyCatalogFromDefinitions(
   definitions: readonly PropertyDefinition[],
 ): LinkEdgePropertyCatalog {
@@ -272,6 +307,7 @@ function edgePropertyCatalogFromDefinitions(
     linkEdgeMarkerFallbackOptions,
     defaultLinkEdgeSelection.markerEnd,
   );
+  const thickness = resolveEdgeThicknessDefinition(definitions);
 
   return {
     markerStartOptions: markerStart.options,
@@ -281,6 +317,7 @@ function edgePropertyCatalogFromDefinitions(
       markerStart: markerStart.defaultValue,
       edgeStyle: edgeStyle.defaultValue,
       markerEnd: markerEnd.defaultValue,
+      thickness,
     },
   };
 }
@@ -336,6 +373,10 @@ function getLinkEntryEdgeSelection(
       catalog.markerEndOptions,
       catalog.defaults.markerEnd,
     ),
+    thickness: normalizeEdgeThicknessValue(
+      properties[linkEdgeThicknessPropertyKey],
+      catalog.defaults.thickness,
+    ),
   };
 }
 
@@ -350,12 +391,6 @@ function toCustomLinkPropertyRows(entry: LinkSetEntryUpsertRequest): KeyValueRow
     }));
 }
 
-function countCustomLinkProperties(entry: LinkSetEntryUpsertRequest): number {
-  const properties = linkEntryPropertiesRecord(entry.elkProperties);
-  return Object.keys(properties).filter((propertyKey) => !linkEdgePropertyKeys.has(propertyKey))
-    .length;
-}
-
 function createLinkEntryWithEdgeDefaults(
   label: string,
   selection: LinkEdgeSelection,
@@ -366,6 +401,7 @@ function createLinkEntryWithEdgeDefaults(
       [linkEdgeMarkerStartPropertyKey]: selection.markerStart,
       [linkEdgeStylePropertyKey]: selection.edgeStyle,
       [linkEdgeMarkerEndPropertyKey]: selection.markerEnd,
+      [linkEdgeThicknessPropertyKey]: selection.thickness,
     },
   };
 }
@@ -375,10 +411,11 @@ function buildLinkEntryPayload(
   selection: LinkEdgeSelection,
   rows: readonly KeyValueRow[],
 ): LinkSetEntryUpsertRequest {
-  const properties: Record<string, string> = {
+  const properties: Record<string, unknown> = {
     [linkEdgeMarkerStartPropertyKey]: selection.markerStart,
     [linkEdgeStylePropertyKey]: selection.edgeStyle,
     [linkEdgeMarkerEndPropertyKey]: selection.markerEnd,
+    [linkEdgeThicknessPropertyKey]: selection.thickness,
   };
 
   for (const row of rows) {
@@ -429,11 +466,13 @@ function edgeEndpointMarker(
   x: number,
   y: number,
   side: "start" | "end",
+  strokeWidth: number,
 ): ReactNode {
   const isStart = side === "start";
   const arrowBackX = isStart ? x + 8 : x - 8;
   const diamondNearX = isStart ? x + 5 : x - 5;
   const diamondFarX = isStart ? x + 10 : x - 10;
+  const markerStrokeWidth = Math.max(1.6, Math.min(strokeWidth, 4));
 
   switch (markerType) {
     case "OPEN_ARROW":
@@ -442,7 +481,7 @@ function edgeEndpointMarker(
           points={`${arrowBackX},${y - 6} ${x},${y} ${arrowBackX},${y + 6}`}
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.6"
+          strokeWidth={markerStrokeWidth}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -460,7 +499,7 @@ function edgeEndpointMarker(
           points={`${x},${y} ${arrowBackX},${y - 6} ${arrowBackX},${y + 6}`}
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.8"
+          strokeWidth={markerStrokeWidth}
           strokeLinejoin="round"
         />
       );
@@ -477,7 +516,7 @@ function edgeEndpointMarker(
           points={`${x},${y} ${diamondNearX},${y - 5} ${diamondFarX},${y} ${diamondNearX},${y + 5}`}
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.8"
+          strokeWidth={markerStrokeWidth}
           strokeLinejoin="round"
         />
       );
@@ -490,13 +529,16 @@ function EdgePreview({
   markerStart,
   edgeStyle,
   markerEnd,
+  thickness,
   compact = false,
 }: {
   readonly markerStart: string;
   readonly edgeStyle: string;
   readonly markerEnd: string;
+  readonly thickness: number;
   readonly compact?: boolean;
 }) {
+  const effectiveThickness = Math.max(0.5, Math.min(thickness, 12));
   const strokeDasharray = edgeStyleDashArray(edgeStyle);
   const lineY = 19;
   const startTipX = 18;
@@ -528,12 +570,12 @@ function EdgePreview({
           x2={lineEndX}
           y2={lineY}
           stroke="currentColor"
-          strokeWidth="2.25"
+          strokeWidth={effectiveThickness}
           strokeLinecap="round"
           strokeDasharray={strokeDasharray}
         />
-        {edgeEndpointMarker(markerStart, startTipX, lineY, "start")}
-        {edgeEndpointMarker(markerEnd, endTipX, lineY, "end")}
+        {edgeEndpointMarker(markerStart, startTipX, lineY, "start", effectiveThickness)}
+        {edgeEndpointMarker(markerEnd, endTipX, lineY, "end", effectiveThickness)}
       </svg>
     </Box>
   );
@@ -3713,13 +3755,9 @@ export function LinkSetPublishedView() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Key</TableCell>
-                      <TableCell>Label</TableCell>
-                      <TableCell>Edge Preview</TableCell>
-                      <TableCell>Marker Start</TableCell>
-                      <TableCell>Edge Style</TableCell>
-                      <TableCell>Marker End</TableCell>
-                      <TableCell>Additional Properties</TableCell>
+                      <TableCell sx={linkSetKeyColumnSx}>Key</TableCell>
+                      <TableCell sx={linkSetLabelColumnSx}>Label</TableCell>
+                      <TableCell sx={linkSetPreviewColumnSx}>Edge Preview</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -3727,20 +3765,17 @@ export function LinkSetPublishedView() {
                       const edgeSelection = getLinkEntryEdgeSelection(row.value, edgeCatalog);
                       return (
                         <TableRow key={row.key}>
-                          <TableCell>{row.key}</TableCell>
-                          <TableCell>{row.value.label}</TableCell>
-                          <TableCell sx={{ minWidth: 180 }}>
+                          <TableCell sx={linkSetKeyColumnSx}>{row.key}</TableCell>
+                          <TableCell sx={linkSetLabelColumnSx}>{row.value.label}</TableCell>
+                          <TableCell sx={linkSetPreviewColumnSx}>
                             <EdgePreview
                               markerStart={edgeSelection.markerStart}
                               edgeStyle={edgeSelection.edgeStyle}
                               markerEnd={edgeSelection.markerEnd}
+                              thickness={edgeSelection.thickness}
                               compact
                             />
                           </TableCell>
-                          <TableCell>{edgeSelection.markerStart}</TableCell>
-                          <TableCell>{edgeSelection.edgeStyle}</TableCell>
-                          <TableCell>{edgeSelection.markerEnd}</TableCell>
-                          <TableCell>{countCustomLinkProperties(row.value)}</TableCell>
                         </TableRow>
                       );
                     })}
@@ -3780,6 +3815,9 @@ export function LinkSetDraftEditor() {
   );
   const [edgeStyleInput, setEdgeStyleInput] = useState(defaultLinkEdgeSelection.edgeStyle);
   const [markerEndInput, setMarkerEndInput] = useState(defaultLinkEdgeSelection.markerEnd);
+  const [thicknessInput, setThicknessInput] = useState(
+    formatThicknessValue(defaultLinkEdgeSelection.thickness),
+  );
   const [propertiesRows, setPropertiesRows] = useState<KeyValueRow[]>([]);
   const appliedDraftSignatureRef = useRef<string | null>(null);
 
@@ -3817,6 +3855,11 @@ export function LinkSetDraftEditor() {
         edgeCatalog.defaults.markerEnd,
       ),
     );
+    setThicknessInput((current) =>
+      formatThicknessValue(
+        normalizeEdgeThicknessValue(current, edgeCatalog.defaults.thickness),
+      ),
+    );
   }, [edgeCatalog]);
 
   useEffect(() => {
@@ -3835,6 +3878,7 @@ export function LinkSetDraftEditor() {
     setMarkerStartInput(edgeCatalog.defaults.markerStart);
     setEdgeStyleInput(edgeCatalog.defaults.edgeStyle);
     setMarkerEndInput(edgeCatalog.defaults.markerEnd);
+    setThicknessInput(formatThicknessValue(edgeCatalog.defaults.thickness));
     setPropertiesRows([{ id: Date.now(), key: "", value: "" }]);
   };
 
@@ -3853,6 +3897,7 @@ export function LinkSetDraftEditor() {
     setMarkerStartInput(edgeSelection.markerStart);
     setEdgeStyleInput(edgeSelection.edgeStyle);
     setMarkerEndInput(edgeSelection.markerEnd);
+    setThicknessInput(formatThicknessValue(edgeSelection.thickness));
 
     const mappedRows = toCustomLinkPropertyRows(row.value);
 
@@ -3880,6 +3925,7 @@ export function LinkSetDraftEditor() {
         markerStart: markerStartInput,
         edgeStyle: edgeStyleInput,
         markerEnd: markerEndInput,
+        thickness: normalizeEdgeThicknessValue(thicknessInput, edgeCatalog.defaults.thickness),
       },
       propertiesRows,
     );
@@ -4067,13 +4113,9 @@ export function LinkSetDraftEditor() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Key</TableCell>
-                  <TableCell>Label</TableCell>
-                  <TableCell>Edge Preview</TableCell>
-                  <TableCell>Marker Start</TableCell>
-                  <TableCell>Edge Style</TableCell>
-                  <TableCell>Marker End</TableCell>
-                  <TableCell>Additional Properties</TableCell>
+                  <TableCell sx={linkSetKeyColumnSx}>Key</TableCell>
+                  <TableCell sx={linkSetLabelColumnSx}>Label</TableCell>
+                  <TableCell sx={linkSetPreviewColumnSx}>Edge Preview</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -4082,20 +4124,17 @@ export function LinkSetDraftEditor() {
                   const edgeSelection = getLinkEntryEdgeSelection(row.value, edgeCatalog);
                   return (
                     <TableRow key={row.key}>
-                      <TableCell>{row.key}</TableCell>
-                      <TableCell>{row.value.label}</TableCell>
-                      <TableCell sx={{ minWidth: 180 }}>
+                      <TableCell sx={linkSetKeyColumnSx}>{row.key}</TableCell>
+                      <TableCell sx={linkSetLabelColumnSx}>{row.value.label}</TableCell>
+                      <TableCell sx={linkSetPreviewColumnSx}>
                         <EdgePreview
                           markerStart={edgeSelection.markerStart}
                           edgeStyle={edgeSelection.edgeStyle}
                           markerEnd={edgeSelection.markerEnd}
+                          thickness={edgeSelection.thickness}
                           compact
                         />
                       </TableCell>
-                      <TableCell>{edgeSelection.markerStart}</TableCell>
-                      <TableCell>{edgeSelection.edgeStyle}</TableCell>
-                      <TableCell>{edgeSelection.markerEnd}</TableCell>
-                      <TableCell>{countCustomLinkProperties(row.value)}</TableCell>
                       <TableCell align="right">
                         <Tooltip title="Edit">
                           <IconButton size="small" onClick={() => openEdit(row)}>
@@ -4147,6 +4186,7 @@ export function LinkSetDraftEditor() {
                 markerStart={markerStartInput}
                 edgeStyle={edgeStyleInput}
                 markerEnd={markerEndInput}
+                thickness={normalizeEdgeThicknessValue(thicknessInput, edgeCatalog.defaults.thickness)}
               />
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 <TextField
@@ -4191,6 +4231,14 @@ export function LinkSetDraftEditor() {
                     </MenuItem>
                   ))}
                 </TextField>
+                <TextField
+                  label="Thickness"
+                  type="number"
+                  value={thicknessInput}
+                  onChange={(event) => setThicknessInput(event.target.value)}
+                  fullWidth
+                  inputProps={{ min: 0.1, step: 0.1 }}
+                />
               </Stack>
 
               <Typography variant="subtitle2">ELK Properties</Typography>
@@ -6214,6 +6262,9 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
   );
   const [edgeStyleInput, setEdgeStyleInput] = useState(defaultLinkEdgeSelection.edgeStyle);
   const [markerEndInput, setMarkerEndInput] = useState(defaultLinkEdgeSelection.markerEnd);
+  const [thicknessInput, setThicknessInput] = useState(
+    formatThicknessValue(defaultLinkEdgeSelection.thickness),
+  );
   const [propertiesRows, setPropertiesRows] = useState<KeyValueRow[]>([]);
 
   const rows = useMemo(
@@ -6246,6 +6297,11 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
         edgeCatalog.defaults.markerEnd,
       ),
     );
+    setThicknessInput((current) =>
+      formatThicknessValue(
+        normalizeEdgeThicknessValue(current, edgeCatalog.defaults.thickness),
+      ),
+    );
   }, [edgeCatalog]);
 
   if (!resourceId) {
@@ -6276,6 +6332,7 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
     setMarkerStartInput(edgeCatalog.defaults.markerStart);
     setEdgeStyleInput(edgeCatalog.defaults.edgeStyle);
     setMarkerEndInput(edgeCatalog.defaults.markerEnd);
+    setThicknessInput(formatThicknessValue(edgeCatalog.defaults.thickness));
     setPropertiesRows([{ id: Date.now(), key: "", value: "" }]);
   };
 
@@ -6294,6 +6351,7 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
     setMarkerStartInput(edgeSelection.markerStart);
     setEdgeStyleInput(edgeSelection.edgeStyle);
     setMarkerEndInput(edgeSelection.markerEnd);
+    setThicknessInput(formatThicknessValue(edgeSelection.thickness));
 
     const mappedRows = toCustomLinkPropertyRows(row.value);
 
@@ -6322,6 +6380,7 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
         markerStart: markerStartInput,
         edgeStyle: edgeStyleInput,
         markerEnd: markerEndInput,
+        thickness: normalizeEdgeThicknessValue(thicknessInput, edgeCatalog.defaults.thickness),
       },
       propertiesRows,
     );
@@ -6406,13 +6465,9 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Key</TableCell>
-                  <TableCell>Label</TableCell>
-                  <TableCell>Edge Preview</TableCell>
-                  <TableCell>Marker Start</TableCell>
-                  <TableCell>Edge Style</TableCell>
-                  <TableCell>Marker End</TableCell>
-                  <TableCell>Additional Properties</TableCell>
+                  <TableCell sx={linkSetKeyColumnSx}>Key</TableCell>
+                  <TableCell sx={linkSetLabelColumnSx}>Label</TableCell>
+                  <TableCell sx={linkSetPreviewColumnSx}>Edge Preview</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -6421,20 +6476,17 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                   const edgeSelection = getLinkEntryEdgeSelection(row.value, edgeCatalog);
                   return (
                     <TableRow key={row.key}>
-                      <TableCell>{row.key}</TableCell>
-                      <TableCell>{row.value.label}</TableCell>
-                      <TableCell sx={{ minWidth: 180 }}>
+                      <TableCell sx={linkSetKeyColumnSx}>{row.key}</TableCell>
+                      <TableCell sx={linkSetLabelColumnSx}>{row.value.label}</TableCell>
+                      <TableCell sx={linkSetPreviewColumnSx}>
                         <EdgePreview
                           markerStart={edgeSelection.markerStart}
                           edgeStyle={edgeSelection.edgeStyle}
                           markerEnd={edgeSelection.markerEnd}
+                          thickness={edgeSelection.thickness}
                           compact
                         />
                       </TableCell>
-                      <TableCell>{edgeSelection.markerStart}</TableCell>
-                      <TableCell>{edgeSelection.edgeStyle}</TableCell>
-                      <TableCell>{edgeSelection.markerEnd}</TableCell>
-                      <TableCell>{countCustomLinkProperties(row.value)}</TableCell>
                       <TableCell align="right">
                         <Tooltip title="Edit">
                           <IconButton size="small" onClick={() => openEdit(row)}>
@@ -6486,6 +6538,7 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                 markerStart={markerStartInput}
                 edgeStyle={edgeStyleInput}
                 markerEnd={markerEndInput}
+                thickness={normalizeEdgeThicknessValue(thicknessInput, edgeCatalog.defaults.thickness)}
               />
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 <TextField
@@ -6530,6 +6583,14 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                     </MenuItem>
                   ))}
                 </TextField>
+                <TextField
+                  label="Thickness"
+                  type="number"
+                  value={thicknessInput}
+                  onChange={(event) => setThicknessInput(event.target.value)}
+                  fullWidth
+                  inputProps={{ min: 0.1, step: 0.1 }}
+                />
               </Stack>
 
               <Typography variant="subtitle2">ELK Properties</Typography>

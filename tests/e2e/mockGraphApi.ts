@@ -113,6 +113,13 @@ export async function mockGraphApi(page: Page) {
           defaultValue: "NONE",
           writableIn: ["layoutSet.elkSettings", "linkSet.entries[*].elkProperties"],
         },
+        {
+          key: "org.eclipse.elk.edge.thickness",
+          valueType: "number",
+          enumValues: null,
+          defaultValue: 1,
+          writableIn: ["layoutSet.elkSettings", "linkSet.entries[*].elkProperties"],
+        },
       ],
     },
   } as const;
