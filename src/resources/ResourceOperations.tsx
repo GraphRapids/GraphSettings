@@ -30,7 +30,14 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   useNotify,
   useRecordContext,
@@ -66,6 +73,8 @@ import type {
   LinkSetSummary,
   LinkSetEntryUpsertRequest,
   LinkSetUpdateRequest,
+  PropertyCatalogResponse,
+  PropertyDefinition,
   ThemeBundle,
   ThemeCreateRequest,
   ThemeRecord,
@@ -150,6 +159,429 @@ const variableTypeOptions: ThemeVariableUpsertRequest["valueType"][] = [
   "custom",
 ];
 const themeVariableEmptyDisplay = "—";
+const linkEdgeMarkerStartPropertyKey = "graphrapids.edge.marker_start";
+const linkEdgeStylePropertyKey = "graphrapids.edge.style";
+const linkEdgeMarkerEndPropertyKey = "graphrapids.edge.marker_end";
+const linkEdgePropertyKeys = new Set<string>([
+  linkEdgeMarkerStartPropertyKey,
+  linkEdgeStylePropertyKey,
+  linkEdgeMarkerEndPropertyKey,
+]);
+const linkEdgeMarkerFallbackOptions = [
+  "NONE",
+  "OPEN_ARROW",
+  "SOLID_ARROW",
+  "HOLLOW_ARROW",
+  "SOLID_DIAMOND",
+  "HOLLOW_DIAMOND",
+];
+const linkEdgeStyleFallbackOptions = [
+  "SOLID",
+  "DASH",
+  "DOT",
+  "DASH_DOT",
+  "LONG_DASH_DOT",
+];
+
+interface LinkEdgeSelection {
+  readonly markerStart: string;
+  readonly edgeStyle: string;
+  readonly markerEnd: string;
+}
+
+interface LinkEdgePropertyCatalog {
+  readonly markerStartOptions: string[];
+  readonly edgeStyleOptions: string[];
+  readonly markerEndOptions: string[];
+  readonly defaults: LinkEdgeSelection;
+}
+
+const defaultLinkEdgeSelection: LinkEdgeSelection = {
+  markerStart: "NONE",
+  edgeStyle: "SOLID",
+  markerEnd: "NONE",
+};
+const defaultLinkEdgePropertyCatalog: LinkEdgePropertyCatalog = {
+  markerStartOptions: [...linkEdgeMarkerFallbackOptions],
+  edgeStyleOptions: [...linkEdgeStyleFallbackOptions],
+  markerEndOptions: [...linkEdgeMarkerFallbackOptions],
+  defaults: defaultLinkEdgeSelection,
+};
+
+function dedupeStringValues(value: unknown, fallback: readonly string[]): string[] {
+  if (!Array.isArray(value)) {
+    return [...fallback];
+  }
+
+  const deduped: string[] = [];
+  const seen = new Set<string>();
+  for (const candidate of value) {
+    if (typeof candidate !== "string") {
+      continue;
+    }
+    const normalized = candidate.trim();
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    deduped.push(normalized);
+  }
+
+  return deduped.length > 0 ? deduped : [...fallback];
+}
+
+function resolveEdgePropertyDefinition(
+  definitions: readonly PropertyDefinition[],
+  propertyKey: string,
+  fallbackOptions: readonly string[],
+  fallbackDefault: string,
+): { options: string[]; defaultValue: string } {
+  const definition = definitions.find(
+    (candidate) => candidate.key === propertyKey && candidate.valueType === "enum",
+  );
+  const options = dedupeStringValues(definition?.enumValues, fallbackOptions);
+  const defaultCandidate =
+    typeof definition?.defaultValue === "string"
+      ? definition.defaultValue.trim()
+      : fallbackDefault;
+  const defaultValue = options.includes(defaultCandidate)
+    ? defaultCandidate
+    : (options[0] ?? fallbackDefault);
+
+  return { options, defaultValue };
+}
+
+function edgePropertyCatalogFromDefinitions(
+  definitions: readonly PropertyDefinition[],
+): LinkEdgePropertyCatalog {
+  const markerStart = resolveEdgePropertyDefinition(
+    definitions,
+    linkEdgeMarkerStartPropertyKey,
+    linkEdgeMarkerFallbackOptions,
+    defaultLinkEdgeSelection.markerStart,
+  );
+  const edgeStyle = resolveEdgePropertyDefinition(
+    definitions,
+    linkEdgeStylePropertyKey,
+    linkEdgeStyleFallbackOptions,
+    defaultLinkEdgeSelection.edgeStyle,
+  );
+  const markerEnd = resolveEdgePropertyDefinition(
+    definitions,
+    linkEdgeMarkerEndPropertyKey,
+    linkEdgeMarkerFallbackOptions,
+    defaultLinkEdgeSelection.markerEnd,
+  );
+
+  return {
+    markerStartOptions: markerStart.options,
+    edgeStyleOptions: edgeStyle.options,
+    markerEndOptions: markerEnd.options,
+    defaults: {
+      markerStart: markerStart.defaultValue,
+      edgeStyle: edgeStyle.defaultValue,
+      markerEnd: markerEnd.defaultValue,
+    },
+  };
+}
+
+function edgePropertyCatalogFromResponse(payload: PropertyCatalogResponse): LinkEdgePropertyCatalog {
+  const edgeDefinitions = payload.elements?.edge;
+  return edgePropertyCatalogFromDefinitions(
+    Array.isArray(edgeDefinitions) ? edgeDefinitions : [],
+  );
+}
+
+function normalizeEdgePropertyValue(
+  value: unknown,
+  options: readonly string[],
+  fallback: string,
+): string {
+  const normalized = typeof value === "string" ? value.trim() : "";
+  if (normalized && options.includes(normalized)) {
+    return normalized;
+  }
+
+  if (options.includes(fallback)) {
+    return fallback;
+  }
+  return options[0] ?? fallback;
+}
+
+function linkEntryPropertiesRecord(value: unknown): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return {};
+  }
+  return value as Record<string, unknown>;
+}
+
+function getLinkEntryEdgeSelection(
+  entry: LinkSetEntryUpsertRequest,
+  catalog: LinkEdgePropertyCatalog,
+): LinkEdgeSelection {
+  const properties = linkEntryPropertiesRecord(entry.elkProperties);
+  return {
+    markerStart: normalizeEdgePropertyValue(
+      properties[linkEdgeMarkerStartPropertyKey],
+      catalog.markerStartOptions,
+      catalog.defaults.markerStart,
+    ),
+    edgeStyle: normalizeEdgePropertyValue(
+      properties[linkEdgeStylePropertyKey],
+      catalog.edgeStyleOptions,
+      catalog.defaults.edgeStyle,
+    ),
+    markerEnd: normalizeEdgePropertyValue(
+      properties[linkEdgeMarkerEndPropertyKey],
+      catalog.markerEndOptions,
+      catalog.defaults.markerEnd,
+    ),
+  };
+}
+
+function toCustomLinkPropertyRows(entry: LinkSetEntryUpsertRequest): KeyValueRow[] {
+  const properties = linkEntryPropertiesRecord(entry.elkProperties);
+  return Object.entries(properties)
+    .filter(([propertyKey]) => !linkEdgePropertyKeys.has(propertyKey))
+    .map(([propertyKey, propertyValue], index) => ({
+      id: Date.now() + index,
+      key: propertyKey,
+      value: formatValue(propertyValue),
+    }));
+}
+
+function countCustomLinkProperties(entry: LinkSetEntryUpsertRequest): number {
+  const properties = linkEntryPropertiesRecord(entry.elkProperties);
+  return Object.keys(properties).filter((propertyKey) => !linkEdgePropertyKeys.has(propertyKey))
+    .length;
+}
+
+function createLinkEntryWithEdgeDefaults(
+  label: string,
+  selection: LinkEdgeSelection,
+): LinkSetEntryUpsertRequest {
+  return {
+    label,
+    elkProperties: {
+      [linkEdgeMarkerStartPropertyKey]: selection.markerStart,
+      [linkEdgeStylePropertyKey]: selection.edgeStyle,
+      [linkEdgeMarkerEndPropertyKey]: selection.markerEnd,
+    },
+  };
+}
+
+function buildLinkEntryPayload(
+  label: string,
+  selection: LinkEdgeSelection,
+  rows: readonly KeyValueRow[],
+): LinkSetEntryUpsertRequest {
+  const properties: Record<string, string> = {
+    [linkEdgeMarkerStartPropertyKey]: selection.markerStart,
+    [linkEdgeStylePropertyKey]: selection.edgeStyle,
+    [linkEdgeMarkerEndPropertyKey]: selection.markerEnd,
+  };
+
+  for (const row of rows) {
+    const propertyKey = row.key.trim();
+    if (propertyKey.length === 0 || linkEdgePropertyKeys.has(propertyKey)) {
+      continue;
+    }
+    properties[propertyKey] = row.value;
+  }
+
+  return {
+    label,
+    elkProperties: properties,
+  };
+}
+
+function edgeStyleDashArray(style: string): string | undefined {
+  switch (style) {
+    case "DASH":
+      return "10 6";
+    case "DOT":
+      return "2 6";
+    case "DASH_DOT":
+      return "10 6 2 6";
+    case "LONG_DASH_DOT":
+      return "18 8 2 8";
+    default:
+      return undefined;
+  }
+}
+
+function edgeMarkerLineOffset(markerType: string): number {
+  switch (markerType) {
+    case "OPEN_ARROW":
+    case "SOLID_ARROW":
+    case "HOLLOW_ARROW":
+      return 8;
+    case "SOLID_DIAMOND":
+    case "HOLLOW_DIAMOND":
+      return 10;
+    default:
+      return 0;
+  }
+}
+
+function edgeEndpointMarker(
+  markerType: string,
+  x: number,
+  y: number,
+  side: "start" | "end",
+): ReactNode {
+  const isStart = side === "start";
+  const arrowBackX = isStart ? x + 8 : x - 8;
+  const diamondNearX = isStart ? x + 5 : x - 5;
+  const diamondFarX = isStart ? x + 10 : x - 10;
+
+  switch (markerType) {
+    case "OPEN_ARROW":
+      return (
+        <polyline
+          points={`${arrowBackX},${y - 6} ${x},${y} ${arrowBackX},${y + 6}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      );
+    case "SOLID_ARROW":
+      return (
+        <polygon
+          points={`${x},${y} ${arrowBackX},${y - 6} ${arrowBackX},${y + 6}`}
+          fill="currentColor"
+        />
+      );
+    case "HOLLOW_ARROW":
+      return (
+        <polygon
+          points={`${x},${y} ${arrowBackX},${y - 6} ${arrowBackX},${y + 6}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+      );
+    case "SOLID_DIAMOND":
+      return (
+        <polygon
+          points={`${x},${y} ${diamondNearX},${y - 5} ${diamondFarX},${y} ${diamondNearX},${y + 5}`}
+          fill="currentColor"
+        />
+      );
+    case "HOLLOW_DIAMOND":
+      return (
+        <polygon
+          points={`${x},${y} ${diamondNearX},${y - 5} ${diamondFarX},${y} ${diamondNearX},${y + 5}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+      );
+    default:
+      return null;
+  }
+}
+
+function EdgePreview({
+  markerStart,
+  edgeStyle,
+  markerEnd,
+  compact = false,
+}: {
+  readonly markerStart: string;
+  readonly edgeStyle: string;
+  readonly markerEnd: string;
+  readonly compact?: boolean;
+}) {
+  const strokeDasharray = edgeStyleDashArray(edgeStyle);
+  const lineY = 19;
+  const startTipX = 18;
+  const endTipX = 202;
+  const lineStartX = startTipX + edgeMarkerLineOffset(markerStart);
+  const lineEndX = endTipX - edgeMarkerLineOffset(markerEnd);
+
+  return (
+    <Box
+      sx={{
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 1,
+        backgroundColor: "background.default",
+        px: compact ? 1 : 1.5,
+        py: compact ? 0.5 : 1,
+      }}
+    >
+      <svg
+        width="100%"
+        height={compact ? 28 : 38}
+        viewBox="0 0 220 38"
+        role="img"
+        aria-label="Selected edge preview"
+      >
+        <line
+          x1={lineStartX}
+          y1={lineY}
+          x2={lineEndX}
+          y2={lineY}
+          stroke="currentColor"
+          strokeWidth="2.25"
+          strokeLinecap="round"
+          strokeDasharray={strokeDasharray}
+        />
+        {edgeEndpointMarker(markerStart, startTipX, lineY, "start")}
+        {edgeEndpointMarker(markerEnd, endTipX, lineY, "end")}
+      </svg>
+    </Box>
+  );
+}
+
+function useLinkEdgePropertyCatalog(): {
+  readonly catalog: LinkEdgePropertyCatalog;
+  readonly loading: boolean;
+} {
+  const notify = useNotify();
+  const [catalog, setCatalog] = useState<LinkEdgePropertyCatalog>(defaultLinkEdgePropertyCatalog);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCatalog = async () => {
+      setLoading(true);
+      try {
+        const payload = await scopedApiAdapter.getPropertyCatalog("edge");
+        if (!active) {
+          return;
+        }
+        setCatalog(edgePropertyCatalogFromResponse(payload));
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+        notify(`Unable to load edge catalog; using fallback options. ${toErrorMessage(error)}`, {
+          type: "warning",
+        });
+        setCatalog(defaultLinkEdgePropertyCatalog);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadCatalog();
+
+    return () => {
+      active = false;
+    };
+  }, [notify]);
+
+  return { catalog, loading };
+}
 
 function isThemeVariableValueType(
   value: unknown,
@@ -209,7 +641,10 @@ function toColorPickerValue(value: string): string {
     return "#000000";
   }
 
-  const raw = matched[1];
+  const raw = matched[1] ?? "";
+  if (!raw) {
+    return "#000000";
+  }
   if (raw.length === 3 || raw.length === 4) {
     const expanded = raw
       .split("")
@@ -761,11 +1196,6 @@ function normalizeLinkEntries(value: unknown): Record<string, LinkSetEntryUpsert
     }
 
     const normalized: LinkSetEntryUpsertRequest = { label };
-    const elkEdgeType =
-      typeof source.elkEdgeType === "string" ? source.elkEdgeType.trim() : "";
-    if (elkEdgeType) {
-      normalized.elkEdgeType = elkEdgeType;
-    }
 
     if (
       typeof source.elkProperties === "object" &&
@@ -2962,6 +3392,7 @@ export function LinkSetCreateEditor() {
   const notify = useNotify();
   const redirect = useRedirect();
   const refresh = useRefresh();
+  const { catalog: edgeCatalog } = useLinkEdgePropertyCatalog();
 
   const [linkSetId, setLinkSetId] = useState("");
   const [name, setName] = useState("");
@@ -3053,7 +3484,10 @@ export function LinkSetCreateEditor() {
     setErrorMessage(null);
     try {
       let entries: Record<string, LinkSetEntryUpsertRequest> = {
-        [DUMMY_LINK_ENTRY_KEY]: { label: DUMMY_LINK_ENTRY_LABEL },
+        [DUMMY_LINK_ENTRY_KEY]: createLinkEntryWithEdgeDefaults(
+          DUMMY_LINK_ENTRY_LABEL,
+          edgeCatalog.defaults,
+        ),
       };
       let createMode = "with placeholder entry";
 
@@ -3188,6 +3622,7 @@ export function LinkSetCreateEditor() {
 
 export function LinkSetPublishedView() {
   const { notify, resourceId } = useOperationContext("linkSetId");
+  const { catalog: edgeCatalog } = useLinkEdgePropertyCatalog();
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [bundle, setBundle] = useState<LinkSetBundle | null>(null);
@@ -3280,21 +3715,35 @@ export function LinkSetPublishedView() {
                     <TableRow>
                       <TableCell>Key</TableCell>
                       <TableCell>Label</TableCell>
-                      <TableCell>ELK Edge Type</TableCell>
-                      <TableCell>Properties</TableCell>
+                      <TableCell>Edge Preview</TableCell>
+                      <TableCell>Marker Start</TableCell>
+                      <TableCell>Edge Style</TableCell>
+                      <TableCell>Marker End</TableCell>
+                      <TableCell>Additional Properties</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {rows.map((row) => (
-                      <TableRow key={row.key}>
-                        <TableCell>{row.key}</TableCell>
-                        <TableCell>{row.value.label}</TableCell>
-                        <TableCell>{row.value.elkEdgeType ?? "-"}</TableCell>
-                        <TableCell>
-                          {Object.keys(row.value.elkProperties ?? {}).length}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {rows.map((row) => {
+                      const edgeSelection = getLinkEntryEdgeSelection(row.value, edgeCatalog);
+                      return (
+                        <TableRow key={row.key}>
+                          <TableCell>{row.key}</TableCell>
+                          <TableCell>{row.value.label}</TableCell>
+                          <TableCell sx={{ minWidth: 180 }}>
+                            <EdgePreview
+                              markerStart={edgeSelection.markerStart}
+                              edgeStyle={edgeSelection.edgeStyle}
+                              markerEnd={edgeSelection.markerEnd}
+                              compact
+                            />
+                          </TableCell>
+                          <TableCell>{edgeSelection.markerStart}</TableCell>
+                          <TableCell>{edgeSelection.edgeStyle}</TableCell>
+                          <TableCell>{edgeSelection.markerEnd}</TableCell>
+                          <TableCell>{countCustomLinkProperties(row.value)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
@@ -3315,6 +3764,7 @@ export function LinkSetPublishedView() {
 export function LinkSetDraftEditor() {
   const record = useRecordContext<RaRecord>();
   const { notify, refresh, resourceId } = useOperationContext("linkSetId");
+  const { catalog: edgeCatalog, loading: loadingEdgeCatalog } = useLinkEdgePropertyCatalog();
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [entries, setEntries] = useState<Record<string, LinkSetEntryUpsertRequest>>({});
@@ -3325,7 +3775,11 @@ export function LinkSetDraftEditor() {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [keyInput, setKeyInput] = useState("");
   const [labelInput, setLabelInput] = useState("");
-  const [edgeTypeInput, setEdgeTypeInput] = useState("");
+  const [markerStartInput, setMarkerStartInput] = useState(
+    defaultLinkEdgeSelection.markerStart,
+  );
+  const [edgeStyleInput, setEdgeStyleInput] = useState(defaultLinkEdgeSelection.edgeStyle);
+  const [markerEndInput, setMarkerEndInput] = useState(defaultLinkEdgeSelection.markerEnd);
   const [propertiesRows, setPropertiesRows] = useState<KeyValueRow[]>([]);
   const appliedDraftSignatureRef = useRef<string | null>(null);
 
@@ -3342,6 +3796,30 @@ export function LinkSetDraftEditor() {
   );
 
   useEffect(() => {
+    setMarkerStartInput((current) =>
+      normalizeEdgePropertyValue(
+        current,
+        edgeCatalog.markerStartOptions,
+        edgeCatalog.defaults.markerStart,
+      ),
+    );
+    setEdgeStyleInput((current) =>
+      normalizeEdgePropertyValue(
+        current,
+        edgeCatalog.edgeStyleOptions,
+        edgeCatalog.defaults.edgeStyle,
+      ),
+    );
+    setMarkerEndInput((current) =>
+      normalizeEdgePropertyValue(
+        current,
+        edgeCatalog.markerEndOptions,
+        edgeCatalog.defaults.markerEnd,
+      ),
+    );
+  }, [edgeCatalog]);
+
+  useEffect(() => {
     if (appliedDraftSignatureRef.current === draftSignature) {
       return;
     }
@@ -3354,7 +3832,9 @@ export function LinkSetDraftEditor() {
 
   const resetForm = () => {
     setLabelInput("");
-    setEdgeTypeInput("");
+    setMarkerStartInput(edgeCatalog.defaults.markerStart);
+    setEdgeStyleInput(edgeCatalog.defaults.edgeStyle);
+    setMarkerEndInput(edgeCatalog.defaults.markerEnd);
     setPropertiesRows([{ id: Date.now(), key: "", value: "" }]);
   };
 
@@ -3369,16 +3849,12 @@ export function LinkSetDraftEditor() {
     setEditingKey(row.key);
     setKeyInput(row.key);
     setLabelInput(row.value.label);
-    setEdgeTypeInput(row.value.elkEdgeType ?? "");
+    const edgeSelection = getLinkEntryEdgeSelection(row.value, edgeCatalog);
+    setMarkerStartInput(edgeSelection.markerStart);
+    setEdgeStyleInput(edgeSelection.edgeStyle);
+    setMarkerEndInput(edgeSelection.markerEnd);
 
-    const properties = row.value.elkProperties ?? {};
-    const mappedRows = Object.entries(properties).map(
-      ([propertyKey, propertyValue], index) => ({
-        id: Date.now() + index,
-        key: propertyKey,
-        value: formatValue(propertyValue),
-      }),
-    );
+    const mappedRows = toCustomLinkPropertyRows(row.value);
 
     setPropertiesRows(
       mappedRows.length > 0 ? mappedRows : [{ id: Date.now(), key: "", value: "" }],
@@ -3398,25 +3874,15 @@ export function LinkSetDraftEditor() {
       return;
     }
 
-    const payload: LinkSetEntryUpsertRequest = {
-      label: normalizedLabel,
-    };
-    const normalizedEdgeType = edgeTypeInput.trim();
-    if (normalizedEdgeType.length > 0) {
-      payload.elkEdgeType = normalizedEdgeType;
-    }
-
-    const properties: Record<string, string> = {};
-    for (const row of propertiesRows) {
-      const propertyKey = row.key.trim();
-      if (propertyKey.length === 0) {
-        continue;
-      }
-      properties[propertyKey] = row.value;
-    }
-    if (Object.keys(properties).length > 0) {
-      payload.elkProperties = properties;
-    }
+    const payload = buildLinkEntryPayload(
+      normalizedLabel,
+      {
+        markerStart: markerStartInput,
+        edgeStyle: edgeStyleInput,
+        markerEnd: markerEndInput,
+      },
+      propertiesRows,
+    );
 
     setEntries((current) => {
       const next = { ...current };
@@ -3603,38 +4069,52 @@ export function LinkSetDraftEditor() {
                 <TableRow>
                   <TableCell>Key</TableCell>
                   <TableCell>Label</TableCell>
-                  <TableCell>ELK Edge Type</TableCell>
-                  <TableCell>Properties</TableCell>
+                  <TableCell>Edge Preview</TableCell>
+                  <TableCell>Marker Start</TableCell>
+                  <TableCell>Edge Style</TableCell>
+                  <TableCell>Marker End</TableCell>
+                  <TableCell>Additional Properties</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.key}>
-                    <TableCell>{row.key}</TableCell>
-                    <TableCell>{row.value.label}</TableCell>
-                    <TableCell>{row.value.elkEdgeType ?? "-"}</TableCell>
-                    <TableCell>
-                      {Object.keys(row.value.elkProperties ?? {}).length}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Edit">
-                        <IconButton size="small" onClick={() => openEdit(row)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => deleteEntryLocal(row.key)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {rows.map((row) => {
+                  const edgeSelection = getLinkEntryEdgeSelection(row.value, edgeCatalog);
+                  return (
+                    <TableRow key={row.key}>
+                      <TableCell>{row.key}</TableCell>
+                      <TableCell>{row.value.label}</TableCell>
+                      <TableCell sx={{ minWidth: 180 }}>
+                        <EdgePreview
+                          markerStart={edgeSelection.markerStart}
+                          edgeStyle={edgeSelection.edgeStyle}
+                          markerEnd={edgeSelection.markerEnd}
+                          compact
+                        />
+                      </TableCell>
+                      <TableCell>{edgeSelection.markerStart}</TableCell>
+                      <TableCell>{edgeSelection.edgeStyle}</TableCell>
+                      <TableCell>{edgeSelection.markerEnd}</TableCell>
+                      <TableCell>{countCustomLinkProperties(row.value)}</TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Edit">
+                          <IconButton size="small" onClick={() => openEdit(row)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => deleteEntryLocal(row.key)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -3661,12 +4141,57 @@ export function LinkSetDraftEditor() {
                 onChange={(event) => setLabelInput(event.target.value)}
                 fullWidth
               />
-              <TextField
-                label="ELK Edge Type (optional)"
-                value={edgeTypeInput}
-                onChange={(event) => setEdgeTypeInput(event.target.value)}
-                fullWidth
+
+              <Typography variant="subtitle2">Selected Edge</Typography>
+              <EdgePreview
+                markerStart={markerStartInput}
+                edgeStyle={edgeStyleInput}
+                markerEnd={markerEndInput}
               />
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <TextField
+                  select
+                  label="Marker Start"
+                  value={markerStartInput}
+                  onChange={(event) => setMarkerStartInput(event.target.value)}
+                  fullWidth
+                  disabled={loadingEdgeCatalog}
+                >
+                  {edgeCatalog.markerStartOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label="Edge Style"
+                  value={edgeStyleInput}
+                  onChange={(event) => setEdgeStyleInput(event.target.value)}
+                  fullWidth
+                  disabled={loadingEdgeCatalog}
+                >
+                  {edgeCatalog.edgeStyleOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label="Marker End"
+                  value={markerEndInput}
+                  onChange={(event) => setMarkerEndInput(event.target.value)}
+                  fullWidth
+                  disabled={loadingEdgeCatalog}
+                >
+                  {edgeCatalog.markerEndOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Stack>
 
               <Typography variant="subtitle2">ELK Properties</Typography>
               {propertiesRows.map((row) => (
@@ -5674,6 +6199,7 @@ function LayoutSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">)
 
 function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
   const { notify, refresh, resourceId } = useOperationContext(idField);
+  const { catalog: edgeCatalog, loading: loadingEdgeCatalog } = useLinkEdgePropertyCatalog();
   const [query, setQuery] = useState<StageVersionState>(defaultStageQuery());
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -5683,7 +6209,11 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [keyInput, setKeyInput] = useState("");
   const [labelInput, setLabelInput] = useState("");
-  const [edgeTypeInput, setEdgeTypeInput] = useState("");
+  const [markerStartInput, setMarkerStartInput] = useState(
+    defaultLinkEdgeSelection.markerStart,
+  );
+  const [edgeStyleInput, setEdgeStyleInput] = useState(defaultLinkEdgeSelection.edgeStyle);
+  const [markerEndInput, setMarkerEndInput] = useState(defaultLinkEdgeSelection.markerEnd);
   const [propertiesRows, setPropertiesRows] = useState<KeyValueRow[]>([]);
 
   const rows = useMemo(
@@ -5693,6 +6223,30 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
         .sort((left, right) => left.key.localeCompare(right.key)),
     [entries],
   );
+
+  useEffect(() => {
+    setMarkerStartInput((current) =>
+      normalizeEdgePropertyValue(
+        current,
+        edgeCatalog.markerStartOptions,
+        edgeCatalog.defaults.markerStart,
+      ),
+    );
+    setEdgeStyleInput((current) =>
+      normalizeEdgePropertyValue(
+        current,
+        edgeCatalog.edgeStyleOptions,
+        edgeCatalog.defaults.edgeStyle,
+      ),
+    );
+    setMarkerEndInput((current) =>
+      normalizeEdgePropertyValue(
+        current,
+        edgeCatalog.markerEndOptions,
+        edgeCatalog.defaults.markerEnd,
+      ),
+    );
+  }, [edgeCatalog]);
 
   if (!resourceId) {
     return <Alert severity="info">Record ID is not available.</Alert>;
@@ -5706,7 +6260,7 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
         stage: query.stage,
         version: parseVersionOrThrow(query.version),
       });
-      setEntries(payload.entries as Record<string, LinkSetEntryUpsertRequest>);
+      setEntries(normalizeLinkEntries(payload.entries));
       notify("Entries loaded", { type: "success" });
     } catch (error) {
       const message = toErrorMessage(error);
@@ -5719,7 +6273,9 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
 
   const resetForm = () => {
     setLabelInput("");
-    setEdgeTypeInput("");
+    setMarkerStartInput(edgeCatalog.defaults.markerStart);
+    setEdgeStyleInput(edgeCatalog.defaults.edgeStyle);
+    setMarkerEndInput(edgeCatalog.defaults.markerEnd);
     setPropertiesRows([{ id: Date.now(), key: "", value: "" }]);
   };
 
@@ -5734,16 +6290,12 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
     setEditingKey(row.key);
     setKeyInput(row.key);
     setLabelInput(row.value.label);
-    setEdgeTypeInput(row.value.elkEdgeType ?? "");
+    const edgeSelection = getLinkEntryEdgeSelection(row.value, edgeCatalog);
+    setMarkerStartInput(edgeSelection.markerStart);
+    setEdgeStyleInput(edgeSelection.edgeStyle);
+    setMarkerEndInput(edgeSelection.markerEnd);
 
-    const properties = row.value.elkProperties ?? {};
-    const mappedRows = Object.entries(properties).map(
-      ([propertyKey, propertyValue], index) => ({
-        id: Date.now() + index,
-        key: propertyKey,
-        value: formatValue(propertyValue),
-      }),
-    );
+    const mappedRows = toCustomLinkPropertyRows(row.value);
 
     setPropertiesRows(
       mappedRows.length > 0 ? mappedRows : [{ id: Date.now(), key: "", value: "" }],
@@ -5764,26 +6316,15 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
       return;
     }
 
-    const payload: LinkSetEntryUpsertRequest = {
-      label: normalizedLabel,
-    };
-
-    const normalizedEdgeType = edgeTypeInput.trim();
-    if (normalizedEdgeType.length > 0) {
-      payload.elkEdgeType = normalizedEdgeType;
-    }
-
-    const properties: Record<string, string> = {};
-    for (const row of propertiesRows) {
-      const propertyKey = row.key.trim();
-      if (propertyKey.length === 0) {
-        continue;
-      }
-      properties[propertyKey] = row.value;
-    }
-    if (Object.keys(properties).length > 0) {
-      payload.elkProperties = properties;
-    }
+    const payload = buildLinkEntryPayload(
+      normalizedLabel,
+      {
+        markerStart: markerStartInput,
+        edgeStyle: edgeStyleInput,
+        markerEnd: markerEndInput,
+      },
+      propertiesRows,
+    );
 
     setBusy(true);
     setErrorMessage(null);
@@ -5867,38 +6408,52 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                 <TableRow>
                   <TableCell>Key</TableCell>
                   <TableCell>Label</TableCell>
-                  <TableCell>ELK Edge Type</TableCell>
-                  <TableCell>Properties</TableCell>
+                  <TableCell>Edge Preview</TableCell>
+                  <TableCell>Marker Start</TableCell>
+                  <TableCell>Edge Style</TableCell>
+                  <TableCell>Marker End</TableCell>
+                  <TableCell>Additional Properties</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.key}>
-                    <TableCell>{row.key}</TableCell>
-                    <TableCell>{row.value.label}</TableCell>
-                    <TableCell>{row.value.elkEdgeType ?? "-"}</TableCell>
-                    <TableCell>
-                      {Object.keys(row.value.elkProperties ?? {}).length}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Edit">
-                        <IconButton size="small" onClick={() => openEdit(row)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => removeEntry(row.key)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {rows.map((row) => {
+                  const edgeSelection = getLinkEntryEdgeSelection(row.value, edgeCatalog);
+                  return (
+                    <TableRow key={row.key}>
+                      <TableCell>{row.key}</TableCell>
+                      <TableCell>{row.value.label}</TableCell>
+                      <TableCell sx={{ minWidth: 180 }}>
+                        <EdgePreview
+                          markerStart={edgeSelection.markerStart}
+                          edgeStyle={edgeSelection.edgeStyle}
+                          markerEnd={edgeSelection.markerEnd}
+                          compact
+                        />
+                      </TableCell>
+                      <TableCell>{edgeSelection.markerStart}</TableCell>
+                      <TableCell>{edgeSelection.edgeStyle}</TableCell>
+                      <TableCell>{edgeSelection.markerEnd}</TableCell>
+                      <TableCell>{countCustomLinkProperties(row.value)}</TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Edit">
+                          <IconButton size="small" onClick={() => openEdit(row)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => removeEntry(row.key)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -5925,12 +6480,57 @@ function LinkSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                 onChange={(event) => setLabelInput(event.target.value)}
                 fullWidth
               />
-              <TextField
-                label="ELK Edge Type (optional)"
-                value={edgeTypeInput}
-                onChange={(event) => setEdgeTypeInput(event.target.value)}
-                fullWidth
+
+              <Typography variant="subtitle2">Selected Edge</Typography>
+              <EdgePreview
+                markerStart={markerStartInput}
+                edgeStyle={edgeStyleInput}
+                markerEnd={markerEndInput}
               />
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <TextField
+                  select
+                  label="Marker Start"
+                  value={markerStartInput}
+                  onChange={(event) => setMarkerStartInput(event.target.value)}
+                  fullWidth
+                  disabled={loadingEdgeCatalog}
+                >
+                  {edgeCatalog.markerStartOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label="Edge Style"
+                  value={edgeStyleInput}
+                  onChange={(event) => setEdgeStyleInput(event.target.value)}
+                  fullWidth
+                  disabled={loadingEdgeCatalog}
+                >
+                  {edgeCatalog.edgeStyleOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label="Marker End"
+                  value={markerEndInput}
+                  onChange={(event) => setMarkerEndInput(event.target.value)}
+                  fullWidth
+                  disabled={loadingEdgeCatalog}
+                >
+                  {edgeCatalog.markerEndOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Stack>
 
               <Typography variant="subtitle2">ELK Properties</Typography>
               {propertiesRows.map((row) => (

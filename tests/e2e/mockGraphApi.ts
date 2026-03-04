@@ -73,6 +73,49 @@ export async function mockGraphApi(page: Page) {
     updatedAt: "2026-03-02T09:00:00Z",
     checksum: "layout-published-checksum",
   } as const;
+  const edgePropertyCatalog = {
+    schemaVersion: "v1",
+    checksum: "edge-property-catalog-checksum",
+    elements: {
+      edge: [
+        {
+          key: "graphrapids.edge.marker_start",
+          valueType: "enum",
+          enumValues: [
+            "HOLLOW_ARROW",
+            "HOLLOW_DIAMOND",
+            "NONE",
+            "OPEN_ARROW",
+            "SOLID_ARROW",
+            "SOLID_DIAMOND",
+          ],
+          defaultValue: "NONE",
+          writableIn: ["layoutSet.elkSettings", "linkSet.entries[*].elkProperties"],
+        },
+        {
+          key: "graphrapids.edge.style",
+          valueType: "enum",
+          enumValues: ["DASH", "DASH_DOT", "DOT", "LONG_DASH_DOT", "SOLID"],
+          defaultValue: "SOLID",
+          writableIn: ["layoutSet.elkSettings", "linkSet.entries[*].elkProperties"],
+        },
+        {
+          key: "graphrapids.edge.marker_end",
+          valueType: "enum",
+          enumValues: [
+            "HOLLOW_ARROW",
+            "HOLLOW_DIAMOND",
+            "NONE",
+            "OPEN_ARROW",
+            "SOLID_ARROW",
+            "SOLID_DIAMOND",
+          ],
+          defaultValue: "NONE",
+          writableIn: ["layoutSet.elkSettings", "linkSet.entries[*].elkProperties"],
+        },
+      ],
+    },
+  } as const;
 
   await page.route("**/v1/**", (route) => {
     const request = route.request();
@@ -211,6 +254,17 @@ export async function mockGraphApi(page: Page) {
       }
 
       return route.fallback();
+    })(),
+  );
+
+  await page.route("**/v1/property-catalog**", (route) =>
+    (() => {
+      const request = route.request();
+      if (request.method() !== "GET") {
+        return route.fallback();
+      }
+
+      return fulfillJson(route, edgePropertyCatalog);
     })(),
   );
 

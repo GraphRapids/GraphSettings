@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/property-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Property Catalog V1 */
+        get: operations["get_property_catalog_v1_v1_property_catalog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/icon-sets": {
         parameters: {
             query?: never;
@@ -1298,6 +1315,10 @@ export interface components {
             label?: string | null;
             /** Type */
             type?: string | null;
+            /** Properties */
+            properties?: {
+                [key: string]: unknown;
+            };
             /** From */
             from: string;
             /** To */
@@ -1341,6 +1362,34 @@ export interface components {
             iconSetVersion: number;
             /** Checksum */
             checksum?: string | null;
+        };
+        /** PropertyCatalogResponseV1 */
+        PropertyCatalogResponseV1: {
+            /**
+             * Schemaversion
+             * @default v1
+             * @constant
+             */
+            schemaVersion: "v1";
+            /** Checksum */
+            checksum: string;
+            /** Elements */
+            elements: {
+                [key: string]: components["schemas"]["PropertyDefinitionV1"][];
+            };
+        };
+        /** PropertyDefinitionV1 */
+        PropertyDefinitionV1: {
+            /** Key */
+            key: string;
+            /** Valuetype */
+            valueType: string;
+            /** Enumvalues */
+            enumValues?: string[] | null;
+            /** Defaultvalue */
+            defaultValue?: unknown;
+            /** Writablein */
+            writableIn?: string[];
         };
         /** ThemeBundleV1 */
         ThemeBundleV1: {
@@ -1551,6 +1600,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_property_catalog_v1_v1_property_catalog_get: {
+        parameters: {
+            query?: {
+                element?: ("canvas" | "node" | "subgraph" | "edge" | "port" | "label") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PropertyCatalogResponseV1"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

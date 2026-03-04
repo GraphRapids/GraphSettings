@@ -37,6 +37,8 @@ export type LinkSetEntriesResponse = components["schemas"]["LinkSetEntriesRespon
 export type ThemeVariablesResponse = components["schemas"]["ThemeVariablesResponseV1"];
 export type GraphTypeRuntimeResponse =
   components["schemas"]["GraphTypeRuntimeResponseV1"];
+export type PropertyCatalogResponse = components["schemas"]["PropertyCatalogResponseV1"];
+export type PropertyDefinition = components["schemas"]["PropertyDefinitionV1"];
 
 export type IconSetResolveRequest = components["schemas"]["IconsetResolveRequestV1"];
 export type IconSetResolutionResult = components["schemas"]["IconsetResolutionResultV1"];

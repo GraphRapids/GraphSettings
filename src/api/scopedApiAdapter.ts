@@ -32,6 +32,7 @@ import type {
   LinkSetRecord,
   LinkSetSummary,
   LinkSetUpdateRequest,
+  PropertyCatalogResponse,
   ThemeBundle,
   ThemeCreateRequest,
   ThemeRecord,
@@ -89,6 +90,13 @@ export type ResourceUpdate = ResourceUpdateMap[ScopedResourceName];
 export type ResourceBundle = ResourceBundleMap[ScopedResourceName];
 
 export type ResourceStage = "draft" | "published";
+export type PropertyCatalogElement =
+  | "canvas"
+  | "node"
+  | "subgraph"
+  | "edge"
+  | "port"
+  | "label";
 
 export interface StageVersionQuery {
   readonly stage?: ResourceStage;
@@ -241,6 +249,7 @@ export interface ScopedApiAdapter {
     id: string,
     query?: StageVersionQuery,
   ): Promise<GraphTypeRuntimeResponse>;
+  getPropertyCatalog(element?: PropertyCatalogElement): Promise<PropertyCatalogResponse>;
 
   resolveIconSets(payload: IconSetResolveRequest): Promise<IconSetResolutionResult>;
 }
@@ -615,6 +624,20 @@ export const scopedApiAdapter: ScopedApiAdapter = {
         },
       }),
     );
+  },
+
+  async getPropertyCatalog(element) {
+    if (element) {
+      return unwrapResponse(
+        apiClient.GET("/v1/property-catalog", {
+          params: {
+            query: { element },
+          },
+        }),
+      );
+    }
+
+    return unwrapResponse(apiClient.GET("/v1/property-catalog"));
   },
 
   async resolveIconSets(payload) {
