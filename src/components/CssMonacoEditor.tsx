@@ -1,5 +1,5 @@
 import MonacoEditor, { type EditorProps, type Monaco } from "@monaco-editor/react";
-import { Box, Typography } from "@mui/material";
+import { Box, useMediaQuery, useTheme, Typography } from "@mui/material";
 
 interface CssMonacoEditorProps {
   readonly value: string;
@@ -157,6 +157,12 @@ export function CssMonacoEditor({
   minHeight = 960,
   testId,
 }: CssMonacoEditorProps) {
+  const theme = useTheme();
+  const prefersDarkScheme = useMediaQuery("(prefers-color-scheme: dark)");
+  const monacoTheme =
+    theme.palette.mode === "dark" || (theme.palette.mode !== "light" && prefersDarkScheme)
+      ? "vs-dark"
+      : "vs";
   const beforeMount: NonNullable<EditorProps["beforeMount"]> = (monaco) => {
     registerSvgCssData(monaco);
   };
@@ -175,7 +181,7 @@ export function CssMonacoEditor({
       >
         <MonacoEditor
           language="css"
-          theme="vs"
+          theme={monacoTheme}
           beforeMount={beforeMount}
           value={value}
           onChange={(nextValue) => onChange?.(nextValue ?? "")}

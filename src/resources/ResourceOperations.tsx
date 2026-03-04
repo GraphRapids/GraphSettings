@@ -28,6 +28,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -74,6 +75,7 @@ import type {
 } from "../api/scopedTypes";
 import { RawJsonToggle } from "../components/RawJsonToggle";
 import { CssMonacoEditor } from "../components/CssMonacoEditor";
+import { JsonMonacoEditor } from "../components/JsonMonacoEditor";
 import type { ScopedResourceName } from "./scopedResources";
 
 type ResourceIdField =
@@ -196,6 +198,106 @@ function normalizeThemeVariableEntry(value: unknown): ThemeVariableUpsertRequest
 function themeVariableDisplayValue(value: string | null | undefined): string {
   const normalized = normalizeThemeVariableText(value);
   return normalized.length > 0 ? normalized : themeVariableEmptyDisplay;
+}
+
+function toColorPickerValue(value: string): string {
+  const normalized = normalizeThemeVariableText(value);
+  const matched = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.exec(
+    normalized,
+  );
+  if (!matched) {
+    return "#000000";
+  }
+
+  const raw = matched[1];
+  if (raw.length === 3 || raw.length === 4) {
+    const expanded = raw
+      .split("")
+      .map((segment) => `${segment}${segment}`)
+      .join("");
+    return `#${expanded.slice(0, 6).toLowerCase()}`;
+  }
+
+  return `#${raw.slice(0, 6).toLowerCase()}`;
+}
+
+function ThemeVariableColorValue({
+  value,
+}: {
+  readonly value: string | null | undefined;
+}): ReactNode {
+  const display = themeVariableDisplayValue(value);
+  if (display === themeVariableEmptyDisplay) {
+    return display;
+  }
+
+  return (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Box
+        data-testid="theme-color-swatch"
+        sx={{
+          width: 14,
+          height: 14,
+          borderRadius: 0.5,
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: display,
+          flexShrink: 0,
+        }}
+      />
+      <Typography component="code" variant="body2">
+        {display}
+      </Typography>
+    </Stack>
+  );
+}
+
+function ThemeVariableColorInput({
+  label,
+  value,
+  onChange,
+}: {
+  readonly label: string;
+  readonly value: string;
+  readonly onChange: (nextValue: string) => void;
+}): ReactNode {
+  return (
+    <Stack spacing={1}>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+        <Box
+          component="input"
+          type="color"
+          aria-label={`${label} Color Picker`}
+          value={toColorPickerValue(value)}
+          onChange={(event) => onChange((event.target as HTMLInputElement).value)}
+          sx={{
+            width: { xs: "100%", sm: 56 },
+            minWidth: { sm: 56 },
+            height: 40,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 1,
+            backgroundColor: "background.paper",
+            p: 0.5,
+            cursor: "pointer",
+          }}
+        />
+        <TextField
+          label={`${label} Hex`}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="#RRGGBB"
+          fullWidth
+          inputProps={{
+            spellCheck: false,
+            autoCapitalize: "none",
+            autoCorrect: "off",
+          }}
+        />
+      </Stack>
+      <ThemeVariableColorValue value={value} />
+    </Stack>
+  );
 }
 
 function parseVersionOrThrow(value: string): number | undefined {
@@ -589,9 +691,9 @@ function SectionHeader({ title }: { readonly title: string }) {
         px: 1.5,
         py: 1,
         borderRadius: 1,
-        backgroundColor: "grey.100",
+        backgroundColor: "action.hover",
         border: "1px solid",
-        borderColor: "grey.300",
+        borderColor: "divider",
       }}
     >
       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
@@ -712,10 +814,55 @@ function iconifySvgUrl(iconName: string): string {
   return `https://api.iconify.design/${encodeURIComponent(iconName)}.svg`;
 }
 
-function IconifyIconCell({ iconName }: { readonly iconName: string }) {
-  const [failed, setFailed] = useState(false);
+function rgbCssToHex(color: string): string | null {
+  const matched = color
+    .replace(/\s+/g, "")
+    .match(/^rgba?\((\d{1,3}),(\d{1,3}),(\d{1,3})(?:,[^)]+)?\)$/i);
+  if (!matched) {
+    return null;
+  }
 
-  if (failed || iconName.trim().length === 0) {
+  const channels = matched.slice(1, 4).map((value) => {
+    const parsed = Number(value);
+    const clamped = Number.isFinite(parsed) ? Math.max(0, Math.min(255, parsed)) : 0;
+    return clamped.toString(16).padStart(2, "0");
+  });
+
+  return `#${channels.join("")}`;
+}
+
+function normalizeIconPreviewColor(value: string, fallback: string): string {
+  const normalized = value.trim();
+  if (/^#[0-9a-f]{3,8}$/i.test(normalized)) {
+    return normalized;
+  }
+
+  const rgbHex = rgbCssToHex(normalized);
+  if (rgbHex) {
+    return rgbHex;
+  }
+
+  if (/^[a-z]+$/i.test(normalized)) {
+    return normalized;
+  }
+
+  return fallback;
+}
+
+function iconifySvgUrlWithColor(iconName: string, color: string): string {
+  const base = iconifySvgUrl(iconName);
+  const query = `color=${encodeURIComponent(color)}`;
+  return `${base}?${query}`;
+}
+
+function IconifyIconCell({ iconName }: { readonly iconName: string }) {
+  const theme = useTheme();
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const fallbackColor = theme.palette.mode === "dark" ? "#ffffff" : "#111111";
+  const iconColor = normalizeIconPreviewColor(theme.palette.text.primary, fallbackColor);
+  const iconSrc = iconifySvgUrlWithColor(iconName, iconColor);
+
+  if (failedSrc === iconSrc || iconName.trim().length === 0) {
     return (
       <Typography variant="caption" color="text.secondary">
         n/a
@@ -725,14 +872,34 @@ function IconifyIconCell({ iconName }: { readonly iconName: string }) {
 
   return (
     <img
-      src={iconifySvgUrl(iconName)}
+      src={iconSrc}
       alt={iconName}
       width={20}
       height={20}
       style={{ display: "block" }}
       loading="lazy"
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(iconSrc)}
     />
+  );
+}
+
+function IconSelectionPreview({ iconName }: { readonly iconName: string }): ReactNode {
+  const normalized = iconName.trim();
+
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" data-testid="icon-selection-preview">
+      <Typography variant="body2" color="text.secondary">
+        Selected Icon:
+      </Typography>
+      <IconifyIconCell iconName={normalized} />
+      <Typography
+        component="code"
+        variant="body2"
+        data-testid="icon-selection-preview-value"
+      >
+        {normalized.length > 0 ? normalized : "n/a"}
+      </Typography>
+    </Stack>
   );
 }
 
@@ -1395,6 +1562,7 @@ export function IconSetDraftEditor() {
                 onChange={(event) => setIconInput(event.target.value)}
                 fullWidth
               />
+              <IconSelectionPreview iconName={iconInput} />
             </Stack>
           </DialogContent>
           <DialogActions>
@@ -2768,13 +2936,12 @@ export function LayoutSetDraftEditor() {
               )}
 
               {(propertyValueKind === "object" || propertyValueKind === "array") && (
-                <TextField
+                <JsonMonacoEditor
                   label={propertyValueKind === "object" ? "Object JSON" : "Array JSON"}
                   value={propertyJsonValue}
-                  onChange={(event) => setPropertyJsonValue(event.target.value)}
-                  multiline
-                  minRows={6}
-                  fullWidth
+                  onChange={setPropertyJsonValue}
+                  minHeight={960}
+                  testId="layout-property-json-editor"
                 />
               )}
             </Stack>
@@ -3936,10 +4103,10 @@ export function ThemeCreateEditor() {
                           <TableCell>{row.value.valueType}</TableCell>
                           <TableCell>{themeVariableEmptyDisplay}</TableCell>
                           <TableCell>
-                            {themeVariableDisplayValue(row.value.lightValue)}
+                            <ThemeVariableColorValue value={row.value.lightValue} />
                           </TableCell>
                           <TableCell>
-                            {themeVariableDisplayValue(row.value.darkValue)}
+                            <ThemeVariableColorValue value={row.value.darkValue} />
                           </TableCell>
                         </>
                       ) : (
@@ -4050,17 +4217,15 @@ export function ThemeCreateEditor() {
               </TextField>
               {isColorDialogType ? (
                 <>
-                  <TextField
+                  <ThemeVariableColorInput
                     label="Light Value"
                     value={lightValue}
-                    onChange={(event) => setLightValue(event.target.value)}
-                    fullWidth
+                    onChange={setLightValue}
                   />
-                  <TextField
+                  <ThemeVariableColorInput
                     label="Dark Value"
                     value={darkValue}
-                    onChange={(event) => setDarkValue(event.target.value)}
-                    fullWidth
+                    onChange={setDarkValue}
                   />
                 </>
               ) : (
@@ -4195,10 +4360,10 @@ export function ThemePublishedView() {
                               <TableCell>{row.value.valueType}</TableCell>
                               <TableCell>{themeVariableEmptyDisplay}</TableCell>
                               <TableCell>
-                                {themeVariableDisplayValue(row.value.lightValue)}
+                                <ThemeVariableColorValue value={row.value.lightValue} />
                               </TableCell>
                               <TableCell>
-                                {themeVariableDisplayValue(row.value.darkValue)}
+                                <ThemeVariableColorValue value={row.value.darkValue} />
                               </TableCell>
                             </>
                           ) : (
@@ -4530,9 +4695,11 @@ export function ThemeDraftEditor() {
                           <TableCell>{row.value.valueType}</TableCell>
                           <TableCell>{themeVariableEmptyDisplay}</TableCell>
                           <TableCell>
-                            {themeVariableDisplayValue(row.value.lightValue)}
+                            <ThemeVariableColorValue value={row.value.lightValue} />
                           </TableCell>
-                          <TableCell>{themeVariableDisplayValue(row.value.darkValue)}</TableCell>
+                          <TableCell>
+                            <ThemeVariableColorValue value={row.value.darkValue} />
+                          </TableCell>
                         </>
                       ) : (
                         <>
@@ -4648,17 +4815,15 @@ export function ThemeDraftEditor() {
               </TextField>
               {isColorDialogType ? (
                 <>
-                  <TextField
+                  <ThemeVariableColorInput
                     label="Light Value"
                     value={lightValue}
-                    onChange={(event) => setLightValue(event.target.value)}
-                    fullWidth
+                    onChange={setLightValue}
                   />
-                  <TextField
+                  <ThemeVariableColorInput
                     label="Dark Value"
                     value={darkValue}
-                    onChange={(event) => setDarkValue(event.target.value)}
-                    fullWidth
+                    onChange={setDarkValue}
                   />
                 </>
               ) : (
@@ -5021,6 +5186,7 @@ function IconSetEntriesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                 onChange={(event) => setIconInput(event.target.value)}
                 fullWidth
               />
+              <IconSelectionPreview iconName={iconInput} />
             </Stack>
           </DialogContent>
           <DialogActions>
@@ -6035,8 +6201,12 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
                         <TableCell>{row.key}</TableCell>
                         <TableCell>{row.value.valueType}</TableCell>
                         <TableCell>{themeVariableEmptyDisplay}</TableCell>
-                        <TableCell>{themeVariableDisplayValue(row.value.lightValue)}</TableCell>
-                        <TableCell>{themeVariableDisplayValue(row.value.darkValue)}</TableCell>
+                        <TableCell>
+                          <ThemeVariableColorValue value={row.value.lightValue} />
+                        </TableCell>
+                        <TableCell>
+                          <ThemeVariableColorValue value={row.value.darkValue} />
+                        </TableCell>
                       </>
                     ) : (
                       <>
@@ -6109,17 +6279,15 @@ function ThemeVariablesPanel({ idField }: Pick<BaseOperationProps, "idField">) {
               </TextField>
               {isColorDialogType ? (
                 <>
-                  <TextField
+                  <ThemeVariableColorInput
                     label="Light Value"
                     value={lightValue}
-                    onChange={(event) => setLightValue(event.target.value)}
-                    fullWidth
+                    onChange={setLightValue}
                   />
-                  <TextField
+                  <ThemeVariableColorInput
                     label="Dark Value"
                     value={darkValue}
-                    onChange={(event) => setDarkValue(event.target.value)}
-                    fullWidth
+                    onChange={setDarkValue}
                   />
                 </>
               ) : (
@@ -7778,13 +7946,12 @@ function IconResolvePanel() {
               </MenuItem>
             ))}
           </TextField>
-          <TextField
+          <JsonMonacoEditor
             label="Icon Set Refs JSON"
             value={refsJson}
-            onChange={(event) => setRefsJson(event.target.value)}
-            multiline
-            minRows={6}
-            size="small"
+            onChange={setRefsJson}
+            minHeight={960}
+            testId="icon-set-refs-json-editor"
           />
           <Button
             variant="outlined"

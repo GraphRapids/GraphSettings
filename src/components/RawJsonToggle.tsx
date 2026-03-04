@@ -1,5 +1,6 @@
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useMemo, useState, type ReactNode } from "react";
+import { JsonMonacoEditor } from "./JsonMonacoEditor";
 
 interface RawJsonToggleProps {
   readonly value: unknown;
@@ -10,6 +11,8 @@ interface RawJsonToggleProps {
   readonly emptyState?: ReactNode;
   readonly maxWidth?: string;
   readonly formatForRaw?: (value: unknown) => string;
+  readonly editorMinHeight?: number;
+  readonly editorTestId?: string;
 }
 
 function summarizeValue(value: unknown): string {
@@ -40,6 +43,8 @@ export function RawJsonToggle({
   emptyState = null,
   maxWidth,
   formatForRaw,
+  editorMinHeight = 960,
+  editorTestId = "raw-json-monaco-editor",
 }: RawJsonToggleProps) {
   const formattedValue = useMemo(() => {
     if (formatForRaw) {
@@ -81,21 +86,13 @@ export function RawJsonToggle({
       ) : null}
 
       {!collapsedByDefault || showRaw ? (
-        <Box
-          component="pre"
-          sx={{
-            mt: 0,
-            mb: 0,
-            p: 2,
-            borderRadius: 1,
-            overflowX: "auto",
-            backgroundColor: "grey.100",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-            maxWidth,
-          }}
-        >
-          {formattedValue}
+        <Box sx={{ maxWidth }}>
+          <JsonMonacoEditor
+            value={formattedValue}
+            readOnly
+            minHeight={editorMinHeight}
+            testId={editorTestId}
+          />
         </Box>
       ) : null}
     </Stack>

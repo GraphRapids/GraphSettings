@@ -91,7 +91,12 @@ test.describe("GraphSettings widgets", () => {
       "theme-published-variables-section",
       "theme-published-css-section",
     );
+    await expect(page.getByTestId("theme-color-swatch").first()).toBeVisible();
     await expect(page.getByRole("button", { name: "See Raw" })).toBeVisible();
+    await page.getByRole("button", { name: "See Raw" }).first().click();
+    await expect(
+      page.getByTestId("raw-json-monaco-editor").locator(".monaco-editor").first(),
+    ).toBeVisible();
 
     await page.goto("/?widget=themes#/themes");
     await page.getByRole("link", { name: "Edit" }).click();
@@ -100,6 +105,13 @@ test.describe("GraphSettings widgets", () => {
       page.getByTestId("theme-draft-css-editor").locator(".monaco-editor"),
     ).toBeVisible();
     await assertSectionOrder(page, "theme-draft-variables-section", "theme-draft-css-section");
+    await expect(page.getByTestId("theme-color-swatch").first()).toBeVisible();
+    await page.getByRole("button", { name: "Add Variable" }).click();
+    await expect(page.getByLabel("Light Value Color Picker")).toBeVisible();
+    await expect(page.getByLabel("Dark Value Color Picker")).toBeVisible();
+    await expect(page.getByLabel("Light Value Hex")).toBeVisible();
+    await expect(page.getByLabel("Dark Value Hex")).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
 
     await page.goto("/?widget=themes#/themes");
     await page.getByRole("link", { name: "Create" }).click();
@@ -111,6 +123,48 @@ test.describe("GraphSettings widgets", () => {
       page,
       "theme-create-variables-section",
       "theme-create-css-section",
+    );
+    await page.getByRole("button", { name: "Add Variable" }).click();
+    await expect(page.getByLabel("Light Value Color Picker")).toBeVisible();
+    await expect(page.getByLabel("Dark Value Color Picker")).toBeVisible();
+    await expect(page.getByLabel("Light Value Hex")).toBeVisible();
+    await expect(page.getByLabel("Dark Value Hex")).toBeVisible();
+  });
+
+  test("raw JSON view and edit use Monaco editors", async ({ page }) => {
+    await mockGraphApi(page);
+
+    await page.goto("/?widget=icon-sets#/icon-sets");
+    await page.getByRole("link", { name: "Show" }).click();
+    await page.getByRole("button", { name: "See Raw" }).first().click();
+    await expect(
+      page.getByTestId("raw-json-monaco-editor").locator(".monaco-editor").first(),
+    ).toBeVisible();
+
+    await page.goto("/?widget=layout-sets#/layout-sets");
+    await page.getByRole("link", { name: "Edit" }).click();
+    await page.getByRole("button", { name: "Edit property value" }).first().click();
+    await expect(page.getByRole("dialog", { name: "Edit Property Value" })).toBeVisible();
+    await expect(
+      page.getByTestId("layout-property-json-editor").locator(".monaco-editor"),
+    ).toBeVisible();
+  });
+
+  test("icon-set edit dialog shows selected icon preview", async ({ page }) => {
+    await mockGraphApi(page);
+
+    await page.goto("/?widget=icon-sets#/icon-sets");
+    await page.getByRole("link", { name: "Edit" }).click();
+    await expect(page.getByText("Draft Entries Editor", { exact: true }).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Add Entry" }).click();
+    const dialog = page.getByRole("dialog", { name: "Add Icon Entry" });
+    await expect(dialog.getByTestId("icon-selection-preview")).toBeVisible();
+    await expect(dialog.getByTestId("icon-selection-preview-value")).toHaveText("n/a");
+
+    await dialog.getByLabel("Icon").fill("mdi:account");
+    await expect(dialog.getByTestId("icon-selection-preview-value")).toHaveText(
+      "mdi:account",
     );
   });
 });
