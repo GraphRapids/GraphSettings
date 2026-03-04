@@ -7,6 +7,12 @@ interface ValidationErrorPayload {
   readonly fieldErrors: Record<string, string>;
 }
 
+interface DetailErrorPayload {
+  readonly code: string;
+  readonly message: string;
+  readonly details: unknown;
+}
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -41,6 +47,18 @@ function isErrorResponse(value: unknown): value is ErrorResponse {
   }
 
   return typeof value.error.code === "string" && typeof value.error.message === "string";
+}
+
+function isDetailErrorResponse(value: unknown): value is { detail: DetailErrorPayload } {
+  if (!isObject(value) || !isObject(value.detail)) {
+    return false;
+  }
+
+  return (
+    typeof value.detail.code === "string" &&
+    typeof value.detail.message === "string" &&
+    "details" in value.detail
+  );
 }
 
 function toFieldPath(loc: ValidationError["loc"]): string {
@@ -83,6 +101,16 @@ export function normalizeApiError(error: unknown, status = 500): HttpError {
       details: error.error.details,
       errors: {
         "root.serverError": error.error.message,
+      },
+    });
+  }
+
+  if (isDetailErrorResponse(error)) {
+    return new HttpError(error.detail.message, status, {
+      code: error.detail.code,
+      details: error.detail.details,
+      errors: {
+        "root.serverError": error.detail.message,
       },
     });
   }

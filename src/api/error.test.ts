@@ -54,4 +54,27 @@ describe("normalizeApiError", () => {
       },
     });
   });
+
+  it("normalizes detail object error payloads", () => {
+    const error = normalizeApiError(
+      {
+        detail: {
+          code: "LAYOUT_SET_STORAGE_CORRUPTED",
+          message: "Layout set checksum does not match stored entries.",
+          details: null,
+        },
+      },
+      500,
+    );
+
+    expect(error.message).toBe("Layout set checksum does not match stored entries.");
+    expect(error.status).toBe(500);
+    expect(error.body).toEqual({
+      code: "LAYOUT_SET_STORAGE_CORRUPTED",
+      details: null,
+      errors: {
+        "root.serverError": "Layout set checksum does not match stored entries.",
+      },
+    });
+  });
 });
