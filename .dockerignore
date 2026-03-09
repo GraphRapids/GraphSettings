@@ -1,0 +1,15 @@
+node_modules
+dist
+.git
+.github
+tests
+.storybook
+.env
+.env.local
+.env.*.local
+playwright.config.ts
+playwright-report
+test-results
+*.md
+LICENSE
+docker-compose.yml

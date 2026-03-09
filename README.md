@@ -130,6 +130,84 @@ Stories cover:
 - graph types widget
 - themes widget
 
+## Docker
+
+### Build the image
+
+```bash
+docker build -t graph-settings .
+```
+
+Override the API base URL at build time:
+
+```bash
+docker build --build-arg VITE_API_BASE_URL=http://my-api:8000 -t graph-settings .
+```
+
+### Run with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+The service is available at `http://localhost:4173` by default. Override the host port:
+
+```bash
+GRAPH_SETTINGS_PORT=8080 docker compose up --build
+```
+
+### Exposed port
+
+The container listens on port **8080** (nginx). Docker Compose maps it to host port **4173** by default.
+
+### Health check
+
+The service exposes a health check endpoint:
+
+```
+GET /health → 200 {"status":"ok"} (Content-Type: application/json)
+```
+
+Docker Compose includes a `healthcheck` directive that polls this endpoint so dependent services can use `depends_on: { condition: service_healthy }`.
+
+## Integration Tests
+
+Integration tests live in `tests/integration/` and run against a live instance of the service.
+
+### Run integration tests
+
+Start the service first:
+
+```bash
+docker compose up --build -d
+```
+
+Wait for the health check to pass, then run:
+
+```bash
+npx vitest run --config vitest.integration.config.ts
+```
+
+Override the service URL if needed:
+
+```bash
+SERVICE_URL=http://localhost:8080 npx vitest run --config vitest.integration.config.ts
+```
+
+Optionally add a convenience script to `package.json`:
+
+```json
+"test:integration": "vitest run --config vitest.integration.config.ts"
+```
+
+Then run:
+
+```bash
+npm run test:integration
+```
+
+Integration tests are hermetic — each test is self-contained and does not depend on pre-seeded data.
+
 ## Notes
 
 - Full CRUD is enabled for `icon-sets`, `layout-sets`, `link-sets`, `graph-types`, and `themes` (including delete).
