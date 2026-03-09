@@ -95,6 +95,83 @@ Run e2e:
 npm run test:e2e
 ```
 
+## Docker
+
+The service is containerised using a multi-stage Dockerfile (Node.js builder → nginx runtime).
+
+**Exposed port: 8080**
+
+### Build the image
+
+```bash
+docker build -t graph-settings .
+```
+
+### Run the container
+
+```bash
+docker run -p 8080:8080 graph-settings
+```
+
+### Using Docker Compose
+
+```bash
+docker compose up --build
+```
+
+To override the host port, set `GRAPH_SETTINGS_PORT`:
+
+```bash
+GRAPH_SETTINGS_PORT=3000 docker compose up --build
+```
+
+### Health check
+
+The service exposes a health endpoint for readiness checks:
+
+```
+GET /health
+```
+
+Returns `200 OK` with `Content-Type: application/json`:
+
+```json
+{ "status": "ok" }
+```
+
+This contract is standard across all GraphRapids services.
+
+## Integration Tests
+
+Integration tests run against a live instance of the service. They live under `tests/integration/` and are separate from unit tests.
+
+### Prerequisites
+
+- Node.js 20+
+- A running instance of GraphSettings (e.g. via Docker Compose)
+
+### Run
+
+```bash
+# Start the service
+docker compose up --build -d
+
+# Wait for healthy status
+docker compose ps  # check health column
+
+# Run integration tests
+node --test tests/integration/*.test.mjs
+
+# Tear down
+docker compose down
+```
+
+The `SERVICE_URL` environment variable controls which instance the tests target (defaults to `http://localhost:8080`):
+
+```bash
+SERVICE_URL=http://localhost:3000 node --test tests/integration/*.test.mjs
+```
+
 ## Lint
 
 ```bash
