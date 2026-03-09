@@ -75,11 +75,88 @@ Widget mode can also be previewed from the standalone app via URL query:
 - `/?widget=graph-types`
 - `/?widget=themes`
 
+## Docker
+
+### Build and Run
+
+Build the Docker image:
+
+```bash
+docker compose build
+```
+
+Start the service:
+
+```bash
+docker compose up -d
+```
+
+The service is available at `http://localhost:8080`.
+
+### Exposed Port
+
+The container exposes port **8080** (configurable via `GRAPH_SETTINGS_PORT` environment variable for the host mapping).
+
+### Health Check
+
+The service provides a health check endpoint:
+
+```
+GET /health
+```
+
+Returns `200 OK` with `Content-Type: application/json`:
+
+```json
+{"status": "ok"}
+```
+
+This endpoint is used by docker-compose healthcheck and can be polled by orchestration tools to wait for service readiness.
+
+### Configuration
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:8000` | GraphAPI backend URL (build-time) |
+| `GRAPH_SETTINGS_PORT` | `8080` | Host port mapping |
+
 ## Test
 
 ```bash
 npm run test
 ```
+
+## Integration Tests
+
+Integration tests run against a live instance of the service and are separated from unit tests.
+
+### Prerequisites
+
+Start the service via Docker:
+
+```bash
+docker compose up -d
+```
+
+Wait for the health check to pass, then run:
+
+```bash
+npm run test:integration
+```
+
+To run against a different host or port:
+
+```bash
+SERVICE_URL=http://localhost:9090 npm run test:integration
+```
+
+The `SERVICE_URL` environment variable defaults to `http://localhost:8080`.
+
+### What is tested
+
+- `GET /health` returns `200` with `{"status": "ok"}`
+- `GET /` returns HTML (app is served)
+- Unknown routes return HTML (SPA fallback works)
 
 ## E2E Test (Playwright)
 
